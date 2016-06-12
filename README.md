@@ -15,7 +15,7 @@ overwritten* when tests are run:
 
 results
 run
-test/
+test
 
 The following files are required to be in the repo. They will *be
 executed* when the tests are run:
