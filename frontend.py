@@ -65,6 +65,13 @@ def add_activity_route(id, activity):
     
     return update_ops.add_activity(table, id, activity, response)
 
+@delete('/users/<id>/activities/<activity>')
+def delete_activity_route(id, activity):
+    id = int(id)
+    print "deleting activity for id {0}, activity {1}\n".format(id, activity)
+
+    return update_ops.delete_activity(table, id, activity, response)
+
 #  You can use the following without modification
 def main():
     global table
