@@ -42,7 +42,7 @@ def retrieve_by_name(table, name, response):
 
 		for user in result:
 			if user["name"] != name:
-				break
+				continue
 
 			no_user = False
 
