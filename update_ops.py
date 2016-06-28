@@ -59,7 +59,7 @@ def delete_activity(table, id, activity, response):
 		if activities is None:
 			activities = []
 		activity = activity.replace(" ", "_")
-		if any(activitys in s for s in activities):
+		if any(activity in s for s in activities):
 			activities.remove(activity)
 			activity = [activity]
 		else:
