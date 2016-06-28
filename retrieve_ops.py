@@ -3,15 +3,6 @@
 from boto.dynamodb2.items import Item
 from boto.dynamodb2.exceptions import ItemNotFound
 
-def retrieve_by_id_old(table, id, response):
-    print "Retrieve by id not yet implemented"
-
-    response.status = 501
-    
-    return {"errors": [{
-        "retrieve by id not yet 1implemented": {"id": id}
-        }]}
-
 def retrieve_by_id(table, id, response):
     try:
         item = table.get_item(id=id)
