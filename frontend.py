@@ -84,6 +84,12 @@ def delete_activity_route(id, activity):
     print "deleting activity for id {0}, activity {1}\n".format(id, activity)
 
     return update_ops.delete_activity(table, id, activity, response)
+    
+@get('/users')
+def get_list_route():
+    print "Retrieving users {0}\n".format(type, id)
+
+    return retrieve_ops.retrieve_list(table, response)
 
 #  You can use the following without modification
 def main():
