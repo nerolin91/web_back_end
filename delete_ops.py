@@ -33,23 +33,28 @@ def delete_by_id(table, id, response):
 
 
 def delete_by_name(table, name, response):
-    no_user=True
-    # scan whole table
-    all_users= table.scan() 
-    for user in all_users:
-        if user["name"]==name:
-            no_user=False
-            user.delete()
-            # save the deleting result
-            user.partial_save()
-            response.status = 200
-            return {
-                        "data": {
-                            "type": "person",
-                            "id": int(user["id"])
+    try:
+        no_user=True
+        # scan whole table
+        all_users= table.scan() 
+        for user in all_users:
+            if user["name"]==name:
+                no_user=False
+                user.delete()
+                # save the deleting result
+                user.partial_save()
+                response.status = 200
+                return {
+                            "data": {
+                                "type": "person",
+                                "id": int(user["id"])
+                            }
                         }
-                    }
-    if no_user:
+        if no_user:
+            raise ItemNotFound
+
+
+    except ItemNotFound as inf:
         response.status = 404
         return {
             "errors": [{
@@ -58,5 +63,4 @@ def delete_by_name(table, name, response):
                 }
             }]
         }
-
 
