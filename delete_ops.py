@@ -60,33 +60,3 @@ def delete_by_name(table, name, response):
         }
 
 
-
-# def delete_by_name(table, name, response):
-
-#     try:
-#         # scan whole table
-#         all_users= table.scan() 
-#         for user in all_users:
-#             if user["name"]==name:
-                
-#                 user.delete()
-#                 # save the deleting result
-#                 user.partial_save()
-#         response.status = 200
-#         return {
-#                     "data": {
-#                         "type": "person",
-#                         "id": int(user["id"])
-#                     }
-#                 }
-                
-        
-#     except ItemNotFound as inf:
-#         response.status = 404
-#         return {
-#             "errors": [{
-#                 "not_found": {
-#                 "name": name
-#                 }
-#             }]
-#         }
