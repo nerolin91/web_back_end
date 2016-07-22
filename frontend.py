@@ -1,119 +1,122 @@
 #!/usr/bin/env python
 
 '''
-  Template for front end Web server for BasicDB assignment
+  Front end REST server for Assignment 3, CMPT 474.
 '''
 
-# Library packages
+# Standard library packages
+import argparse
+import json
 import sys
+import time
 
 # Installed packages
-import boto.dynamodb2
-import boto.dynamodb2.table
+import bottle
+import gevent
+import gevent.lock
+import gevent.pywsgi
 
-from bottle import post, get, put, delete, run, request, response, default_app
+# Patch standard library to support co-operative multithreading
+# This has to be done *before* front_ops is imported
+from gevent import monkey; monkey.patch_all()
 
-# Local imports
-import create_ops
-import retrieve_ops
-import delete_ops
-import update_ops
+# Local modules
+import SendMsg
+# Your code must define the following names
+from front_ops import (clear_duplicate_response,
+                       get_partner_response,
+                       get_response_action,
+                       is_first_response, is_second_response,
+                       mark_first_response, mark_second_response,
+                       set_send_msg, # Defined in the template code
+                       q_out
+    )
 
-# Configuration constants
-AWS_REGION = "us-west-2"
-TABLE_NAME = "activities"
-DEFAULT_PORT = 8080
+# Constants
+DEFAULT_IP = "0.0.0.0"
+DEFAULT_PORT = 80
 
-def abort(response, status, errors):
-    response.status = status
-    return {"errors": errors}
+MAX_TIME_S = 3600 # One hour
+MAX_WAIT_S = 20 # SQS sets max. of 20 s
+DEFAULT_VIS_TIMEOUT_S = 60
 
-@post('/users')
-def create_route():
-    ct = request.get_header('content-type')
-    if ct != 'application/json':
-        return abort(response, 400, [
-            "request content-type unacceptable:  body must be "
-            "'application/json' (was '{0}')".format(ct)])
-    id = request.json["id"] # In JSON, id is already an integer
-    name = request.json["name"]
+def get_responses(q_out):
+    '''
+       Background thread to route responses.
 
-    print "creating id {0}, name {1}\n".format(id, name)
+       This thread reads responses on the SQS queue q_out.
+       It matches the 'msg_id' field in the message body to
+       the data structures provided  by the students
+       that identify the pairs of responses and duplicate responses.
 
-    # Pass the called routine the response object to construct a response from
-    return create_ops.do_create(request, table, id, name, response)
+       This loop calls the following student-provided routines
+       to manage their data structures at the appropriate points:
 
-@get('/users/<id>')
-def get_id_route(id):
-    id = int(id) # In URI, id is a string and must be made int
-    print "Retrieving id {0}\n".format(id)
+       is_first_response()
+       is_second_response()
+       mark_first_response()
+       mark_second_response()
+       get_response_action()
+       get_partner_response()
+       clear_duplicate_response()
 
-    return retrieve_ops.retrieve_by_id(table, id, response)
+       The loop also does all the reads from the output queue, q_out.
 
-@get('/names/<name>')
-def get_name_route(name):
-    print "Retrieving name {0}\n".format(name)
+       The student code never directly reads from q_out---this loop
+       manages it all.
+    '''
+    wait_start = time.time()
+    print "Starting get_response loop"
+    while True:
+        msg_out = q_out.read(wait_time_seconds=MAX_WAIT_S, visibility_timeout=DEFAULT_VIS_TIMEOUT_S)
+        if msg_out:
+            body = json.loads(msg_out.get_body())
+            id = body['msg_id']
 
-    return retrieve_ops.retrieve_by_name(table, name, response)
+            with SendMsg.guard(guard_resps) as gr:
+                if is_first_response(id):
+                    print "Routing respond msg_id {0} as first response".format(id)
+                    async_res = get_response_action(id)
+                    mark_first_response(id)
+                    async_res.set(body)
+                elif is_second_response(id):
+                    print "Second response {0} for {1} ignored".format(id, get_partner_response(id))
+                    mark_second_response(id)
+                else:
+                    print "Ignoring duplicate msg id {0}".format(id)
+                    clear_duplicate_response(id)
 
-@delete('/users/<id>')
-def delete_id_route(id):
-    id = int(id)
+            q_out.delete_message(msg_out)
+            wait_start = time.time()
+        elif time.time() - wait_start > MAX_TIME_S:
+             print "\nNo messages on input queue for {0} seconds. Server no longer reading response queue {1}.".format(MAX_TIME_S, q_out.name)
+             return
+        else:
+            print "Waited {0} s with no msg".format(MAX_WAIT_S)
+            pass
 
-    print "Deleting id {0}\n".format(id)
-
-    return delete_ops.delete_by_id(table, id, response)
-
-@delete('/names/<name>')
-def delete_name_route(name):
-
-    print "Deleting name {0}\n".format(name)
-
-    return delete_ops.delete_by_name(table, name, response)
-
-@put('/users/<id>/activities/<activity>')
-def add_activity_route(id, activity):
-    id = int(id)
-    print "adding activity for id {0}, activity {1}\n".format(id, activity)
-    
-    return update_ops.add_activity(table, id, activity, response)
-
-@delete('/users/<id>/activities/<activity>')
-def delete_activity_route(id, activity):
-    id = int(id)
-    print "deleting activity for id {0}, activity {1}\n".format(id, activity)
-
-    return update_ops.delete_activity(table, id, activity, response)
-    
-@get('/users')
-def get_list_route():
-    print "Retrieving users {0}\n".format(type, id)
-
-    return retrieve_ops.retrieve_list(table, response)
-
-#  You can use the following without modification
-def main():
-    global table
-    try:
-        conn = boto.dynamodb2.connect_to_region(AWS_REGION)
-        if conn == None:
-            sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
-            sys.exit(1)
-
-        table = boto.dynamodb2.table.Table(TABLE_NAME, connection=conn)
-    except Exception as e:
-        sys.stderr.write("Exception connecting to DynamoDB table {0}\n".format(TABLE_NAME))
-        sys.stderr.write(str(e))
-        sys.exit(1)
-
-    if len(sys.argv) >= 2:
-        port = int(sys.argv[1])
-    else:
-        port = DEFAULT_PORT
-
-    app = default_app()
-    run(app, host="localhost", port=port)
+def parse_args():
+    # Parse the command-line arguments
+    argp = argparse.ArgumentParser(
+        description="REST frontend for simple database")
+    argp.add_argument('--ip', default=DEFAULT_IP,
+                      help="IP address on which to serve (default {0})".format(DEFAULT_IP))
+    argp.add_argument('--port', type=int, default=DEFAULT_PORT,
+                      help="Port to serve (default {0})".format(DEFAULT_PORT))
+    return argp.parse_args()
 
 if __name__ == "__main__":
-    main()
-    
+    # Process command-line arguments
+    args = parse_args()
+
+    # Set up semaphore to control access to queues and msg data structs
+    guard_resps = gevent.lock.BoundedSemaphore()
+    set_send_msg(SendMsg.SendMsg(guard_resps))
+
+    # Start separate thread to read responses and route to correct request thread
+    gevent.spawn(get_responses, q_out)
+
+    # Here we go!  Start the Web server on the specified IP and port
+    app = bottle.default_app()
+    server = gevent.pywsgi.WSGIServer((args.ip, args.port), app)
+    server.serve_forever()
