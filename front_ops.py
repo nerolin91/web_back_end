@@ -44,36 +44,64 @@ def create_route():
     name = request.json["name"]
 
     print "creating id {0}, name {1}\n".format(id, name)
+    json = {"action":"add", "on":"users", "data":{id, name}};
 
     # Pass the called routine the response object to construct a response from
-    return create_ops.do_create(request, table, id, name, response)
+    send_msg_ob.send_msg(json, json);
 
 @get('/users/<id>')
 def get_id_route(id):
+    id = int(id) # In URI, id is a string and must be made int
+    print "Retrieving id {0}\n".format(id)
+    json = {"action":"retrieve", "on":"users", "data":id}
 
+    
 
 @get('/names/<name>')
 def get_name_route(name):
+    print "Retrieving name {0}\n".format(name)
+    json = {"action":"retrieve", "on":"users", "data":name}
 
+    
 
 @delete('/users/<id>')
 def delete_id_route(id):
+    id = int(id)
 
+    print "Deleting id {0}\n".format(id)
+    json = {"action":"delete", "on":"users", "data":id}
+
+    
 
 @delete('/names/<name>')
 def delete_name_route(name):
 
+    json = {"action":"delete", "on":"users", "data":name}
+
+    
 
 @put('/users/<id>/activities/<activity>')
 def add_activity_route(id, activity):
-
+    id = int(id)
+    print "adding activity for id {0}, activity {1}\n".format(id, activity)
+    json = {"action":"add", "on":"activity", "data":{id, activity}}
+    
+    
 
 @delete('/users/<id>/activities/<activity>')
 def delete_activity_route(id, activity):
+    id = int(id)
+    print "deleting activity for id {0}, activity {1}\n".format(id, activity)
+    json = {"action":"delete", "on":"activity", "data":{id, name}}
 
+    
     
 @get('/users')
 def get_list_route():
+    print "Retrieving users {0}\n".format(type, id)
+    json = {"action":"get_list", "on":"users"}
+
+    
 
 
 '''
