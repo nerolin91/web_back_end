@@ -1,7 +1,7 @@
 '''
    Ops for the frontend of Assignment 3, Summer 2016 CMPT 474.
 '''
-
+import sys
 # Standard library packages
 import json
 
@@ -33,6 +33,48 @@ def health_check():
 def create_route():
     pass
 '''
+@post('/users')
+def create_route():
+    ct = request.get_header('content-type')
+    if ct != 'application/json':
+        return abort(response, 400, [
+            "request content-type unacceptable:  body must be "
+            "'application/json' (was '{0}')".format(ct)])
+    id = request.json["id"] # In JSON, id is already an integer
+    name = request.json["name"]
+
+    print "creating id {0}, name {1}\n".format(id, name)
+
+    # Pass the called routine the response object to construct a response from
+    return create_ops.do_create(request, table, id, name, response)
+
+@get('/users/<id>')
+def get_id_route(id):
+
+
+@get('/names/<name>')
+def get_name_route(name):
+
+
+@delete('/users/<id>')
+def delete_id_route(id):
+
+
+@delete('/names/<name>')
+def delete_name_route(name):
+
+
+@put('/users/<id>/activities/<activity>')
+def add_activity_route(id, activity):
+
+
+@delete('/users/<id>/activities/<activity>')
+def delete_activity_route(id, activity):
+
+    
+@get('/users')
+def get_list_route():
+
 
 '''
    Boilerplate: Do not modify the following function. It
@@ -64,9 +106,27 @@ def set_send_msg(send_msg_ob_p):
    The output queue reference must be stored in the variable q_out
 '''
 
+q_in_a = Q_IN_NAME_BASE + "_a";
+a_in_b = Q_IN_NAME_BASE + "_b";
+try:
+    conn = boto.sqs.connect_to_region(AWS_REGION)
+    if conn == None:
+        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+        sys.exit(1)
+
+    # create_queue is idempotent---if queue exists, it simply connects to it
+    q_in_a = conn.create_queue(q_in_a);
+    q_in_b = conn.create_queue(q_in_b);
+except Exception as e:
+    sys.stderr.write("Exception connecting to SQS\n")
+    sys.stderr.write(str(e) + "\n")
+    sys.exit(1)
+
+
 def write_to_queues(msg_a, msg_b):
-    # EXTEND:
-    # Send msg_a to a3_in_a and msg-b to a3_in_b
+    q_dict = create_queue();
+    q_dict['q_in_a'].send_message(msg_a);
+    q_dict['q_in_b'].send_message(msg_b);
     pass
 
 '''
