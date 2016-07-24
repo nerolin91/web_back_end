@@ -24,6 +24,12 @@ MAX_TIME_S = 3600 # One hour
 MAX_WAIT_S = 20 # SQS sets max. of 20 s
 DEFAULT_VIS_TIMEOUT_S = 60
 
+def open_conn(region):
+    conn = boto.sqs.connect_to_region(AWS_REGION)
+    if conn == None:
+        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+        sys.exit(1)
+    return conn
 
 def handle_args():
     argp = argparse.ArgumentParser(
@@ -33,6 +39,20 @@ def handle_args():
 
 if __name__ == "__main__":
     args = handle_args()
+    conn = open_conn(AWS_REGION)
+    var queue
+    var table
+
+    if conn == None:
+        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+        sys.exit(1)
+    if args.suffix == "_a":
+        queue = conn.create_queue("a3_back_in_a")
+        table = boto.dynamodb2.table.Table("activities_a", connection=conn)
+    if args.suffix == "_b":
+        queue = conn.create_queue("a3_back_in_b")
+        table = boto.dynamodb2.table.Table("activities_b", connection=conn)
+
     '''
        EXTEND:
        
