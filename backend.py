@@ -24,12 +24,6 @@ MAX_TIME_S = 3600 # One hour
 MAX_WAIT_S = 20 # SQS sets max. of 20 s
 DEFAULT_VIS_TIMEOUT_S = 60
 
-def open_conn(region):
-    conn = boto.sqs.connect_to_region(AWS_REGION)
-    if conn == None:
-        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
-        sys.exit(1)
-    return conn
 
 def handle_args():
     argp = argparse.ArgumentParser(
@@ -38,21 +32,44 @@ def handle_args():
     return argp.parse_args()
 
 if __name__ == "__main__":
-    args = handle_args()
-    conn = open_conn(AWS_REGION)
-    var queue
-    var table
+   args = handle_args()
+   conn = open_conn(AWS_REGION)
+   var queue = None
+   var outputQueue = None
+   var table = None
+   
+   if conn == None:
+       sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+       sys.exit(1)
+       
+    outputQueue = conn.create_queue("a3_out")
+    
+   if args.suffix == "_a":
+       queue = conn.create_queue("a3_back_in_a")
+       table = boto.dynamodb2.table.Table("activities_a", connection=conn)       
+   if args.suffix == "_b":
+       queue = conn.create_queue("a3_back_in_b")
+       table = boto.dynamodb2.table.Table("activities_b", connection=conn)
+   while True:
+       var messages = queue.get_messages()
+       dictionary = {}
+       for message in messages:
+           var msgID = message["msg_id"]
+           if msgID in dictionary:
+               outputQueue.write(dictionary[msgID])
+           else:
+               var result;
+               #hit database using "message" variable
+               #perform whatever needs to be done to fufil request, store value in result
+               if message["action"] == "create":
 
-    if conn == None:
-        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
-        sys.exit(1)
-    if args.suffix == "_a":
-        queue = conn.create_queue("a3_back_in_a")
-        table = boto.dynamodb2.table.Table("activities_a", connection=conn)
-    if args.suffix == "_b":
-        queue = conn.create_queue("a3_back_in_b")
-        table = boto.dynamodb2.table.Table("activities_b", connection=conn)
+               if message["action"] == "delete":
 
+               if message["action"] == "retrieve":
+                   
+               dictionary[msgID] = result;
+               
+       time.sleep(1)
     '''
        EXTEND:
        
