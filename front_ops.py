@@ -57,7 +57,7 @@ def create_route():
 def get_id_route(id):
     id = int(id) # In URI, id is a string and must be made int
     print "Retrieving id {0}\n".format(id)
-    json = {"action":"retrieve", "on":"users", "id":id, "name":name}
+    json = {"action":"retrieve", "on":"users", "id":id, "name":None}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
