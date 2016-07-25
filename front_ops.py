@@ -44,7 +44,7 @@ def create_route():
     name = request.json["name"]
 
     print "creating id {0}, name {1}\n".format(id, name)
-    json = {"action":"add", "on":"users", "data":[id, name]};
+    json = {"action":"add", "on":"users", "id":id, "name":name};
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
@@ -57,7 +57,7 @@ def create_route():
 def get_id_route(id):
     id = int(id) # In URI, id is a string and must be made int
     print "Retrieving id {0}\n".format(id)
-    json = {"action":"retrieve", "on":"users", "data":id}
+    json = {"action":"retrieve", "on":"users", "id":id, "name":name}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
@@ -71,7 +71,7 @@ def get_id_route(id):
 @get('/names/<name>')
 def get_name_route(name):
     print "Retrieving name {0}\n".format(name)
-    json = {"action":"retrieve", "on":"users", "data":name}
+    json = {"action":"retrieve", "on":"users", "id":None, "name":name}
     json.dumps(json)
     result = send_msg_ob.send_msg(json, json);
 
@@ -81,7 +81,7 @@ def get_name_route(name):
 def delete_id_route(id):
     id = int(id)
     print "Deleting id {0}\n".format(id)
-    json = {"action":"delete", "on":"users", "data":id}
+    json = {"action":"delete", "on":"users", "id":id, "name":None}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
@@ -94,7 +94,7 @@ def delete_id_route(id):
 
 @delete('/names/<name>')
 def delete_name_route(name):
-    json = {"action":"delete", "on":"users", "data":name}
+    json = {"action":"delete", "on":"users", "id":id, "name":name}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
@@ -109,7 +109,7 @@ def delete_name_route(name):
 def add_activity_route(id, activity):
     id = int(id)
     print "adding activity for id {0}, activity {1}\n".format(id, activity)
-    json = {"action":"add", "on":"activity", "data":[id, activity]}
+    json = {"action":"add", "on":"activity", "id":id, "name":activity}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
@@ -124,7 +124,7 @@ def add_activity_route(id, activity):
 def delete_activity_route(id, activity):
     id = int(id)
     print "deleting activity for id {0}, activity {1}\n".format(id, activity)
-    json = {"action":"delete", "on":"activity", "data":[id, name]}
+    json = {"action":"delete", "on":"activity", "id":id, "name":activity}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)

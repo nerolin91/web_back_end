@@ -33,7 +33,7 @@ from front_ops import (clear_duplicate_response,
     )
 
 # Constants
-DEFAULT_IP = "0.0.0.0"
+DEFAULT_IP = "52.40.238.31"
 DEFAULT_PORT = 80
 
 MAX_TIME_S = 3600 # One hour
