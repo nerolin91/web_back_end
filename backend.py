@@ -40,15 +40,48 @@ def handle_args():
 if __name__ == "__main__":
   args = handle_args()
   conn = open_conn(AWS_REGION)
-  queue = None
-  outputQueue = None
+  inputQueue = None
+  outputQueue = conn.create_queue(Q_OUT_NAME)
   table = None
-   
+
+
+  if args.suffix == "_a" or args.suffix == "_b":
+    inputQueue = conn.create_queue(Q_IN_NAME_BASE + args.suffix)
+    table = boto.dynamodb2.table.Table(TABLE_NAME_BASE + args.suffix, connection=conn)
+    print("\nSuffix: " + "*" + args.suffix + "*")
+    print("Input Queue: " + "*" + Q_IN_NAME_BASE + args.suffix + "*")
+    print("DynamoDB Table: " + "*" + TABLE_NAME_BASE + args.suffix + "*\n") 
+  else:
+    sys.stderr.write("Invalid Arguement Suffix\n")
+    sys.exit(1)  
+
+  wait_start = time.time()
+  while True:
+    msg_in = inputQueue.read(wait_time_seconds=MAX_WAIT_S, visibility_timeout=DEFAULT_VIS_TIMEOUT_S)
+    if msg_in:
+        body = json.loads(msg_in.get_body())
+        msg_id = body['msg_id']
+
+        print("Process Message")
+
+        wait_start = time.time()
+    elif time.time() - wait_start > MAX_TIME_S:
+        print "\nNo messages on input queue for {0} seconds. Server no longer reading response queue {1}.".format(MAX_TIME_S, q_out.name)
+        break
+    else:
+        pass  
+
+
+
+
+''' 
   if conn == None:
     sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
     sys.exit(1)
 
     outputQueue = conn.create_queue("a3_out")
+
+    print("HIT 1")
 
     if args.suffix == "_a":
       queue = conn.create_queue("a3_back_in_a")
@@ -56,6 +89,7 @@ if __name__ == "__main__":
     if args.suffix == "_b":
       queue = conn.create_queue("a3_back_in_b")
       table = boto.dynamodb2.table.Table("activities_b", connection=conn)
+      print("HIT 2")
 
     while True:
       messages = queue.get_messages()
@@ -63,7 +97,7 @@ if __name__ == "__main__":
 
       for message in messages:
         msgID = message["msg_id"]
-        
+
         if msgID in dictionary:
           outputQueue.write(dictionary[msgID])
         else:
@@ -82,8 +116,8 @@ if __name__ == "__main__":
           dictionary[msgID] = result;
       
       time.sleep(1)
-    
-    '''
+'''
+'''
        EXTEND:
        
        After the above statement, args.suffix holds the suffix to use
@@ -99,4 +133,4 @@ if __name__ == "__main__":
             * do the requested database operation
             * record the message id and response
             * put the response on the output queue
-    '''
+'''
