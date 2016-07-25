@@ -15,6 +15,7 @@ import boto.dynamodb2
 import boto.dynamodb2.table
 import boto.sqs
 
+
 AWS_REGION = "us-west-2"
 TABLE_NAME_BASE = "activities"
 Q_IN_NAME_BASE = "a3_back_in"
@@ -43,8 +44,10 @@ if __name__ == "__main__":
   inputQueue = None
   outputQueue = conn.create_queue(Q_OUT_NAME)
   table = None
+  seenRequests = {}
 
 
+  # Parse the input argument (Passed in as "$ ./backend.py _a")
   if args.suffix == "_a" or args.suffix == "_b":
     inputQueue = conn.create_queue(Q_IN_NAME_BASE + args.suffix)
     table = boto.dynamodb2.table.Table(TABLE_NAME_BASE + args.suffix, connection=conn)
@@ -55,14 +58,46 @@ if __name__ == "__main__":
     sys.stderr.write("Invalid Arguement Suffix\n")
     sys.exit(1)  
 
+
+  # Uncomment this block to put a test message on the input queue that the
+  #  while True loop below will pull off of.
+  # testMsg = boto.sqs.message.Message()
+  # msgBody = {}
+  # msgBody['msg_id'] = "fejd392hda"
+  # msgBody['req'] = {"action":"retrieve", "on":"users", "data":"132"}
+  
+  # testMsg.set_body(json.dumps(msgBody))
+
+  # inputQueue.write(testMsg)
+
+
+  # Begin reading from the queue. Exit when timed out.
   wait_start = time.time()
   while True:
+    print("Reading message off the input queue")
     msg_in = inputQueue.read(wait_time_seconds=MAX_WAIT_S, visibility_timeout=DEFAULT_VIS_TIMEOUT_S)
     if msg_in:
         body = json.loads(msg_in.get_body())
         msg_id = body['msg_id']
 
-        print("Process Message")
+        # Get the parameters from the JSON
+        msg_body = body['req']
+        request_action = msg_body['action']
+        request_on = msg_body['on']
+        request_data = msg_body['data']
+
+        print("Process Request For msg_id: " + msg_id)
+        print("Action: " + request_action)
+        print("On:     " + request_on)
+        print("Data:   " + request_data + "\n")
+
+        # Check if the request is a duplicate (cached)
+        if msg_id in seenRequests:
+          print("DUPLICATE REQUEST: Passing back cached response")
+          #outputQueue.write(seenRequests[msg_id])
+        else:
+          print("NON-DUPLICATE REQUEST: Hitting the database")
+          #seenRequests[msg_id] = # Some JSON body
 
         wait_start = time.time()
     elif time.time() - wait_start > MAX_TIME_S:
@@ -73,6 +108,31 @@ if __name__ == "__main__":
 
 
 
+
+'''
+  dictionaryTest = {}
+  dictionaryTest['jas'] = 'deep'
+  dictionaryTest['kobe'] = 'bryant'
+  dictionaryTest['lebron'] = 'james'
+
+  if 'jas' in dictionaryTest:
+    print(dictionaryTest['jas']) # prints "deep"
+  else:
+    print("NOT IN IT")
+'''
+
+'''
+  msgBody = {
+    "name1": {
+        "data_type": "String",
+        "string_value": "I am a string"
+    },
+    "name2": {
+        "data_type": "Number",
+        "string_value": "12"
+    },
+  }
+'''
 
 ''' 
   if conn == None:
