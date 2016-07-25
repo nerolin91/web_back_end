@@ -58,8 +58,11 @@ def writeTestRequestToInputQueue():
   #  while True loop below will pull off of.
   testMsg = boto.sqs.message.Message()
   msgBody = {}
-  msgBody['msg_id'] = "fejd392hdewdvcca"
-  msgBody['req'] = {"action":"retrieve", "on":"users", "data":18}
+  msgBody['msg_id'] = "dq3rq32d"
+  # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":18, "name":None}
+  # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":None, "name":"Smith"}
+  msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":2222, "name":None}
+
 
   testMsg.set_body(json.dumps(msgBody))
 
@@ -102,15 +105,14 @@ if __name__ == "__main__":
 
 
         # Get and print the parameters from the JSON
-        msg_body = body['req']
+        msg_body = body['jsonBody']
         request_action = msg_body['action']
         request_on = msg_body['on']
-        request_data = msg_body['data']
+        request_id = msg_body['id']
+        request_name = msg_body['name']
 
         print("Process Request For msg_id: " + msg_id)
-        print("Action: " + request_action)
-        print("On:     " + request_on)
-        #print("Data:   " + request_data + "\n")
+        print("Action: {0}, On: {1}, ID: {2}, Name: {3}".format(request_action, request_on, request_id, request_name))
 
 
         # Check if the request is a duplicate (cached)
@@ -118,7 +120,7 @@ if __name__ == "__main__":
           print("\nDUPLICATE REQUEST: Passing back cached response\n")
 
           returnResponse = seenRequests[msg_id]
-          
+
           # outputQueue.write(returnResponse)
           print(returnResponse)
 
@@ -126,12 +128,37 @@ if __name__ == "__main__":
           print("\nNON-DUPLICATE REQUEST: Hitting the database\n")
 
           httpResp = response # This creates the bottle.response object
-          requestResponse = retrieve_ops.retrieve_by_id(table, request_data, httpResp)
+
+          if request_action == "add" and request_on == "users" and request_id != None and request_name != None:
+            print("Adding new user")
+          elif request_action == "retrieve" and request_on == "users" and request_id != None and request_name == None:
+            print("Retrieving user by ID")
+            requestResponse = retrieve_ops.retrieve_by_id(table, request_id, httpResp)
+          elif request_action == "retrieve" and request_on == "users" and request_id == None and request_name != None:
+            print("Retrieving user by name")
+          elif request_action == "delete" and request_on == "users" and request_id != None and request_name == None:
+            print("Deleting user by id")
+          elif request_action == "delete" and request_on == "users" and request_id == None and request_name != None:
+            print("Deleting user by name")
+          elif request_action == "add" and request_on == "activity" and request_id != None and request_name != None:
+            print("Adding new activity")
+          elif request_action == "delete" and request_on == "activity" and request_id != None and request_name != None:
+            print("Deleting activity")
+          elif request_action == "get_list" and request_on == "users" and request_id == None and request_name == None:
+            print("Getting list of users")
+          else:
+            print("INVALID JSON PARAMETERS")
+            print(request_action)
+            print(request_on)
+            print(request_id)
+            print(request_name)
+            continue
+
 
           # Construct the return response
           returnResponse = {}
           returnResponse['jsonBody'] = requestResponse
-          returnResponse['httpStatusCode'] = httpResp.status_code
+          returnResponse['httpStatusCode'] = httpResp.status_code # IE: 404, 200, etc
           returnResponse['msg_id'] = msg_id
 
           seenRequests[msg_id] = returnResponse
