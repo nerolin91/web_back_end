@@ -15,13 +15,13 @@ import boto.dynamodb2
 import boto.dynamodb2.table
 import boto.sqs
 
-from bottle import response
+from bottle import request, response
 
 # Local imports
-# import create_ops
+import create_ops
 import retrieve_ops
-# import delete_ops
-# import update_ops
+import delete_ops
+import update_ops
 
 AWS_REGION = "us-west-2"
 TABLE_NAME_BASE = "activities"
@@ -61,7 +61,12 @@ def writeTestRequestToInputQueue():
   msgBody['msg_id'] = "dq3rq32d"
   # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":18, "name":None}
   # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":None, "name":"Smith"}
-  msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":2222, "name":None}
+  # msgBody['jsonBody'] = {"action":"add", "on":"users", "id":2222, "name":"Subir"}
+  # msgBody['jsonBody'] = {"action":"delete", "on":"users", "id":2222, "name":None}
+  # msgBody['jsonBody'] = {"action":"delete", "on":"users", "id":None, "name":"Subir"}
+  # msgBody['jsonBody'] = {"action":"add", "on":"activity", "id":2222, "name":"Skiing"}
+  # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
+  msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
 
 
   testMsg.set_body(json.dumps(msgBody))
@@ -131,21 +136,35 @@ if __name__ == "__main__":
 
           if request_action == "add" and request_on == "users" and request_id != None and request_name != None:
             print("Adding new user")
+            requestResponse = create_ops.do_create(request, table, request_id, request_name, httpResp)
+
           elif request_action == "retrieve" and request_on == "users" and request_id != None and request_name == None:
             print("Retrieving user by ID")
             requestResponse = retrieve_ops.retrieve_by_id(table, request_id, httpResp)
+
           elif request_action == "retrieve" and request_on == "users" and request_id == None and request_name != None:
             print("Retrieving user by name")
+            requestResponse = retrieve_ops.retrieve_by_name(table, request_name, httpResp)
+
           elif request_action == "delete" and request_on == "users" and request_id != None and request_name == None:
             print("Deleting user by id")
+            requestResponse = delete_ops.delete_by_id(table, request_id, response)
+
           elif request_action == "delete" and request_on == "users" and request_id == None and request_name != None:
             print("Deleting user by name")
+            requestResponse = delete_ops.delete_by_name(table, request_name, response)
+          
           elif request_action == "add" and request_on == "activity" and request_id != None and request_name != None:
             print("Adding new activity")
+            requestResponse = update_ops.add_activity(table, request_id, request_name, response)
+          
           elif request_action == "delete" and request_on == "activity" and request_id != None and request_name != None:
             print("Deleting activity")
+            requestResponse = update_ops.delete_activity(table, request_id, request_name, response)
+          
           elif request_action == "get_list" and request_on == "users" and request_id == None and request_name == None:
             print("Getting list of users")
+          
           else:
             print("INVALID JSON PARAMETERS")
             print(request_action)
