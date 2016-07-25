@@ -15,6 +15,13 @@ import boto.dynamodb2
 import boto.dynamodb2.table
 import boto.sqs
 
+from bottle import response
+
+# Local imports
+# import create_ops
+import retrieve_ops
+# import delete_ops
+# import update_ops
 
 AWS_REGION = "us-west-2"
 TABLE_NAME_BASE = "activities"
@@ -25,12 +32,19 @@ MAX_TIME_S = 3600 # One hour
 MAX_WAIT_S = 20 # SQS sets max. of 20 s
 DEFAULT_VIS_TIMEOUT_S = 60
 
-def open_conn(region):
+def open_sqs_conn(region):
     conn = boto.sqs.connect_to_region(AWS_REGION)
     if conn == None:
-        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
-        sys.exit(1)
+      sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+      sys.exit(1)
     return conn
+
+def open_dynamodb_conn(region):
+  conn = boto.dynamodb2.connect_to_region(AWS_REGION)
+  if conn == None:
+    sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+    sys.exit(1)
+  return conn
 
 def handle_args():
     argp = argparse.ArgumentParser(
@@ -38,19 +52,35 @@ def handle_args():
     argp.add_argument('suffix', help="Suffix for queue base ({0}) and table base ({1})".format(Q_IN_NAME_BASE, TABLE_NAME_BASE))
     return argp.parse_args()
 
+
+def writeTestRequestToInputQueue():
+  # Uncomment this block to put a test message on the input queue that the
+  #  while True loop below will pull off of.
+  testMsg = boto.sqs.message.Message()
+  msgBody = {}
+  msgBody['msg_id'] = "fejd392hdewdvcca"
+  msgBody['req'] = {"action":"retrieve", "on":"users", "data":18}
+
+  testMsg.set_body(json.dumps(msgBody))
+
+  inputQueue.write(testMsg)
+
+
 if __name__ == "__main__":
   args = handle_args()
-  conn = open_conn(AWS_REGION)
+  conn_sqs = open_sqs_conn(AWS_REGION)
+  conn_dynamoDB = open_dynamodb_conn(AWS_REGION)
   inputQueue = None
-  outputQueue = conn.create_queue(Q_OUT_NAME)
+  outputQueue = conn_sqs.create_queue(Q_OUT_NAME)
   table = None
   seenRequests = {}
 
 
-  # Parse the input argument (Passed in as "$ ./backend.py _a")
+  # Parse the input argument (Passed in as "$ ./backend.py _a" or "$ ./backend.py _b")
   if args.suffix == "_a" or args.suffix == "_b":
-    inputQueue = conn.create_queue(Q_IN_NAME_BASE + args.suffix)
-    table = boto.dynamodb2.table.Table(TABLE_NAME_BASE + args.suffix, connection=conn)
+    inputQueue = conn_sqs.create_queue(Q_IN_NAME_BASE + args.suffix)
+    table = boto.dynamodb2.table.Table(TABLE_NAME_BASE + args.suffix, connection=conn_dynamoDB)
+
     print("\nSuffix: " + "*" + args.suffix + "*")
     print("Input Queue: " + "*" + Q_IN_NAME_BASE + args.suffix + "*")
     print("DynamoDB Table: " + "*" + TABLE_NAME_BASE + args.suffix + "*\n") 
@@ -58,29 +88,20 @@ if __name__ == "__main__":
     sys.stderr.write("Invalid Arguement Suffix\n")
     sys.exit(1)  
 
-
-  # Uncomment this block to put a test message on the input queue that the
-  #  while True loop below will pull off of.
-  # testMsg = boto.sqs.message.Message()
-  # msgBody = {}
-  # msgBody['msg_id'] = "fejd392hda"
-  # msgBody['req'] = {"action":"retrieve", "on":"users", "data":"132"}
-  
-  # testMsg.set_body(json.dumps(msgBody))
-
-  # inputQueue.write(testMsg)
-
+  writeTestRequestToInputQueue()
 
   # Begin reading from the queue. Exit when timed out.
   wait_start = time.time()
   while True:
-    print("Reading message off the input queue")
+    print("\n-------------------------------------")
+    print(" READING MESSAGE OFF THE INPUT QUEUE")
     msg_in = inputQueue.read(wait_time_seconds=MAX_WAIT_S, visibility_timeout=DEFAULT_VIS_TIMEOUT_S)
     if msg_in:
         body = json.loads(msg_in.get_body())
         msg_id = body['msg_id']
 
-        # Get the parameters from the JSON
+
+        # Get and print the parameters from the JSON
         msg_body = body['req']
         request_action = msg_body['action']
         request_on = msg_body['on']
@@ -89,15 +110,31 @@ if __name__ == "__main__":
         print("Process Request For msg_id: " + msg_id)
         print("Action: " + request_action)
         print("On:     " + request_on)
-        print("Data:   " + request_data + "\n")
+        #print("Data:   " + request_data + "\n")
+
 
         # Check if the request is a duplicate (cached)
         if msg_id in seenRequests:
-          print("DUPLICATE REQUEST: Passing back cached response")
+          print("\nDUPLICATE REQUEST: Passing back cached response\n")
           #outputQueue.write(seenRequests[msg_id])
+          returnResponse = seenRequests[msg_id]
+          print(returnResponse)
         else:
-          print("NON-DUPLICATE REQUEST: Hitting the database")
-          #seenRequests[msg_id] = # Some JSON body
+          print("\nNON-DUPLICATE REQUEST: Hitting the database\n")
+
+          httpResp = response # This creates the bottle.response object
+          requestResponse = retrieve_ops.retrieve_by_id(table, request_data, httpResp)
+
+          # Construct the return response
+          returnResponse = {}
+          returnResponse['jsonBody'] = requestResponse
+          returnResponse['httpStatusCode'] = httpResp.status_code
+          returnResponse['msg_id'] = msg_id
+
+          seenRequests[msg_id] = returnResponse
+
+          print(returnResponse)
+
 
         wait_start = time.time()
     elif time.time() - wait_start > MAX_TIME_S:
@@ -108,6 +145,23 @@ if __name__ == "__main__":
 
 
 
+
+
+
+
+'''
+# Setting up the return response from the database
+  httpResp = response
+  requestResponse = retrieve_ops.retrieve_by_id(table, 13, httpResp)
+  # print(httpResp.status)
+  #print(whatWeGet)
+  returnResponse = {}
+  returnResponse['jsonBody'] = requestResponse
+  returnResponse['httpResponse'] = httpResp.status_code
+  returnResponse['msg_id'] = "dtetsh2we"
+
+  print(returnResponse)
+'''
 
 '''
   dictionaryTest = {}
