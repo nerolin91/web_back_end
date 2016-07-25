@@ -135,7 +135,8 @@ def set_send_msg(send_msg_ob_p):
 '''
 
 q_in_a = Q_IN_NAME_BASE + "_a";
-a_in_b = Q_IN_NAME_BASE + "_b";
+q_in_b = Q_IN_NAME_BASE + "_b";
+q_out = Q_OUT_NAME
 try:
     conn = boto.sqs.connect_to_region(AWS_REGION)
     if conn == None:
@@ -164,15 +165,27 @@ def write_to_queues(msg_a, msg_b):
 '''
 
 # Define any necessary data structures globally here
-
+firstResponseId=[]
+secondResPonseId=[]
 def is_first_response(id):
     # EXTEND:
     # Return True if this message is the first response to a request
+    if id not in firstResponseId:
+        if id not in secondResPonseId:
+            return True
+        else:
+            return False   #it's 2nd response response.
+    else:
+        return False #It's dulplicate response.
     pass
 
 def is_second_response(id):
     # EXTEND:
     # Return True if this message is the second response to a request
+    if id not in secondResPonseId(id):
+        return True
+    else:
+        return False   #It's dulplicate response
     pass
 
 def get_response_action(id):
@@ -188,11 +201,13 @@ def get_partner_response(id):
 def mark_first_response(id):
     # EXTEND:
     # Update the data structures to note that the first response has been received
+    firstResponseId.append(id)
     pass
 
 def mark_second_response(id):
     # EXTEND:
     # Update the data structures to note that the second response has been received
+    secondResPonseId.append(id)
     pass
 
 def clear_duplicate_response(id):
