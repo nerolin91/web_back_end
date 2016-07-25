@@ -116,9 +116,12 @@ if __name__ == "__main__":
         # Check if the request is a duplicate (cached)
         if msg_id in seenRequests:
           print("\nDUPLICATE REQUEST: Passing back cached response\n")
-          #outputQueue.write(seenRequests[msg_id])
+
           returnResponse = seenRequests[msg_id]
+          
+          # outputQueue.write(returnResponse)
           print(returnResponse)
+
         else:
           print("\nNON-DUPLICATE REQUEST: Hitting the database\n")
 
@@ -133,6 +136,7 @@ if __name__ == "__main__":
 
           seenRequests[msg_id] = returnResponse
 
+          # outputQueue.write(returnResponse)
           print(returnResponse)
 
 
@@ -144,94 +148,9 @@ if __name__ == "__main__":
         pass  
 
 
-
-
-
-
-
 '''
-# Setting up the return response from the database
-  httpResp = response
-  requestResponse = retrieve_ops.retrieve_by_id(table, 13, httpResp)
-  # print(httpResp.status)
-  #print(whatWeGet)
-  returnResponse = {}
-  returnResponse['jsonBody'] = requestResponse
-  returnResponse['httpResponse'] = httpResp.status_code
-  returnResponse['msg_id'] = "dtetsh2we"
-
-  print(returnResponse)
-'''
-
-'''
-  dictionaryTest = {}
-  dictionaryTest['jas'] = 'deep'
-  dictionaryTest['kobe'] = 'bryant'
-  dictionaryTest['lebron'] = 'james'
-
-  if 'jas' in dictionaryTest:
-    print(dictionaryTest['jas']) # prints "deep"
-  else:
-    print("NOT IN IT")
-'''
-
-'''
-  msgBody = {
-    "name1": {
-        "data_type": "String",
-        "string_value": "I am a string"
-    },
-    "name2": {
-        "data_type": "Number",
-        "string_value": "12"
-    },
-  }
-'''
-
-''' 
-  if conn == None:
-    sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
-    sys.exit(1)
-
-    outputQueue = conn.create_queue("a3_out")
-
-    print("HIT 1")
-
-    if args.suffix == "_a":
-      queue = conn.create_queue("a3_back_in_a")
-      table = boto.dynamodb2.table.Table("activities_a", connection=conn)       
-    if args.suffix == "_b":
-      queue = conn.create_queue("a3_back_in_b")
-      table = boto.dynamodb2.table.Table("activities_b", connection=conn)
-      print("HIT 2")
-
-    while True:
-      messages = queue.get_messages()
-      dictionary = {}
-
-      for message in messages:
-        msgID = message["msg_id"]
-
-        if msgID in dictionary:
-          outputQueue.write(dictionary[msgID])
-        else:
-          result = None
-          #hit database using "message" variable
-          #perform whatever needs to be done to fufil request, store value in result
-          if message["action"] == "create":
-            print("action create msg")
-
-          if message["action"] == "delete":
-            print("action delete msg")
-
-          if message["action"] == "retrieve":
-            print("action retrieve msg")
-
-          dictionary[msgID] = result;
-      
-      time.sleep(1)
-'''
-'''
+      ALMOST DONE!
+      ------------
        EXTEND:
        
        After the above statement, args.suffix holds the suffix to use
