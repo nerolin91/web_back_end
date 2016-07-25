@@ -94,7 +94,7 @@ def delete_id_route(id):
 
 @delete('/names/<name>')
 def delete_name_route(name):
-    json = {"action":"delete", "on":"users", "id":id, "name":name}
+    json = {"action":"delete", "on":"users", "id":id, "name":None}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
@@ -138,7 +138,7 @@ def delete_activity_route(id, activity):
 @get('/users')
 def get_list_route():
     print "Retrieving users {0}\n".format(type, id)
-    json = {"action":"get_list", "on":"users"}
+    json = {"action":"get_list", "on":"users", "id":None, "name": None}
     json.dumps(json)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(json)
