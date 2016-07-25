@@ -44,39 +44,64 @@ def create_route():
     name = request.json["name"]
 
     print "creating id {0}, name {1}\n".format(id, name)
-    json = {"action":"add", "on":"users", "data":{id, name}};
-
+    json = {"action":"add", "on":"users", "id":id, "name":name};
+    json.dumps(json)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(json)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(json)
     # Pass the called routine the response object to construct a response from
-    send_msg_ob.send_msg(json, json);
+    result = send_msg_ob.send_msg(msg_a, msg_b);
 
 @get('/users/<id>')
 def get_id_route(id):
     id = int(id) # In URI, id is a string and must be made int
     print "Retrieving id {0}\n".format(id)
-    json = {"action":"retrieve", "on":"users", "data":id}
+    json = {"action":"retrieve", "on":"users", "id":id, "name":None}
+    json.dumps(json)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(json)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(json)
+    # Pass the called routine the response object to construct a response from
+    result = send_msg_ob.send_msg(msg_a, msg_b);
 
     
 
 @get('/names/<name>')
 def get_name_route(name):
     print "Retrieving name {0}\n".format(name)
-    json = {"action":"retrieve", "on":"users", "data":name}
+    json = {"action":"retrieve", "on":"users", "id":None, "name":name}
+    json.dumps(json)
+    result = send_msg_ob.send_msg(json, json);
 
     
 
 @delete('/users/<id>')
 def delete_id_route(id):
     id = int(id)
-
     print "Deleting id {0}\n".format(id)
-    json = {"action":"delete", "on":"users", "data":id}
+    json = {"action":"delete", "on":"users", "id":id, "name":None}
+    json.dumps(json)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(json)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(json)
+    # Pass the called routine the response object to construct a response from
+    result = send_msg_ob.send_msg(msg_a, msg_b);
 
     
 
 @delete('/names/<name>')
 def delete_name_route(name):
-
-    json = {"action":"delete", "on":"users", "data":name}
+    json = {"action":"delete", "on":"users", "id":id, "name":None}
+    json.dumps(json)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(json)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(json)
+    # Pass the called routine the response object to construct a response from
+    result = send_msg_ob.send_msg(msg_a, msg_b);
 
     
 
@@ -84,7 +109,14 @@ def delete_name_route(name):
 def add_activity_route(id, activity):
     id = int(id)
     print "adding activity for id {0}, activity {1}\n".format(id, activity)
-    json = {"action":"add", "on":"activity", "data":{id, activity}}
+    json = {"action":"add", "on":"activity", "id":id, "name":activity}
+    json.dumps(json)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(json)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(json)
+    # Pass the called routine the response object to construct a response from
+    result = send_msg_ob.send_msg(msg_a, msg_b);
     
     
 
@@ -92,14 +124,28 @@ def add_activity_route(id, activity):
 def delete_activity_route(id, activity):
     id = int(id)
     print "deleting activity for id {0}, activity {1}\n".format(id, activity)
-    json = {"action":"delete", "on":"activity", "data":{id, name}}
+    json = {"action":"delete", "on":"activity", "id":id, "name":activity}
+    json.dumps(json)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(json)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(json)
+    # Pass the called routine the response object to construct a response from
+    result = send_msg_ob.send_msg(msg_a, msg_b);
 
     
     
 @get('/users')
 def get_list_route():
     print "Retrieving users {0}\n".format(type, id)
-    json = {"action":"get_list", "on":"users"}
+    json = {"action":"get_list", "on":"users", "id":None, "name": None}
+    json.dumps(json)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(json)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(json)
+    # Pass the called routine the response object to construct a response from
+    result = send_msg_ob.send_msg(msg_a, msg_b);
 
     
 
@@ -136,7 +182,7 @@ def set_send_msg(send_msg_ob_p):
 
 q_in_a = Q_IN_NAME_BASE + "_a";
 q_in_b = Q_IN_NAME_BASE + "_b";
-q_out = Q_OUT_NAME
+q_out = None
 try:
     conn = boto.sqs.connect_to_region(AWS_REGION)
     if conn == None:
@@ -146,6 +192,7 @@ try:
     # create_queue is idempotent---if queue exists, it simply connects to it
     q_in_a = conn.create_queue(q_in_a);
     q_in_b = conn.create_queue(q_in_b);
+    q_out = conn.create_queue(q_out);
 except Exception as e:
     sys.stderr.write("Exception connecting to SQS\n")
     sys.stderr.write(str(e) + "\n")
@@ -153,10 +200,9 @@ except Exception as e:
 
 
 def write_to_queues(msg_a, msg_b):
-    q_dict = create_queue();
-    q_dict['q_in_a'].send_message(msg_a);
-    q_dict['q_in_b'].send_message(msg_b);
-    pass
+    msg_a_id = q_in_a.send_message(msg_a);
+    msg_b_id = q_in_b.send_message(msg_b);
+
 
 '''
    EXTEND:
