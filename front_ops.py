@@ -167,11 +167,13 @@ def write_to_queues(msg_a, msg_b):
 # Define any necessary data structures globally here
 firstResponseId=[]
 secondResPonseId=[]
+pairId[]
+
 def is_first_response(id):
     # EXTEND:
     # Return True if this message is the first response to a request
     if id not in firstResponseId:
-        if id not in secondResPonseId:
+        if id in pairId and len(pariId)>1:
             return True
         else:
             return False   #it's 2nd response response.
@@ -183,7 +185,10 @@ def is_second_response(id):
     # EXTEND:
     # Return True if this message is the second response to a request
     if id not in secondResPonseId(id):
+      if id in pairId:
         return True
+      else:
+        return False
     else:
         return False   #It's dulplicate response
     pass
@@ -191,11 +196,18 @@ def is_second_response(id):
 def get_response_action(id):
     # EXTEND:
     # Return the action for this message
+    partnerList=pariId
+    if is_first_response:
+      pairId.pop(pairId.index[id])
+    if is_second_response:
+      pairId.pop(pairId.index[id])
     pass
 
 def get_partner_response(id):
     # EXTEND:
     # Return the id of the partner for this message, if any
+    partnerId=partnerList[partnerList.index(id)-1]
+    return partnerId
     pass
 
 def mark_first_response(id):
@@ -229,4 +241,7 @@ def set_dup_DS(action, sent_a, sent_b):
                msg_id attribute of the JSON object returned by the
                response from the backend code that you write.
     '''
+    pairId.append(sent_a[msg_id])
+    pairId.append(sent_b[msg_id])
+
     pass
