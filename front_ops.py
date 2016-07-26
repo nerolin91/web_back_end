@@ -213,7 +213,8 @@ def write_to_queues(msg_a, msg_b):
 # Define any necessary data structures globally here
 firstResponseId=[]
 secondResPonseId=[]
-pairId[]
+pairId=[]
+partnerList=[]
 
 def is_first_response(id):
     # EXTEND:
@@ -287,7 +288,12 @@ def set_dup_DS(action, sent_a, sent_b):
                msg_id attribute of the JSON object returned by the
                response from the backend code that you write.
     '''
-    pairId.append(sent_a[msg_id])
-    pairId.append(sent_b[msg_id])
+ 
+    msg_a = json.loads(sent_a.get_body())
+    msg_a = json.loads(sent_b.get_body())
+    msg_a_id = msg_a['msg_id']
+    msg_b_id = msg_b['msg_id']
+    pairId.append(msg_a_id)
+    pairId.append(msg_b_id)
 
     pass
