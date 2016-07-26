@@ -272,6 +272,7 @@ def mark_second_response(id):
 def clear_duplicate_response(id):
     # EXTEND:
     # Do anything necessary (if at all) when a duplicate response has been received
+    pairId=[]  #empty the pairId list
     pass
 
 def set_dup_DS(action, sent_a, sent_b):
