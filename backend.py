@@ -206,23 +206,3 @@ if __name__ == "__main__":
     else:
         pass  
 
-
-'''
-      ALMOST DONE!
-      ------------
-       EXTEND:
-       
-       After the above statement, args.suffix holds the suffix to use
-       for the input queue and the DynamoDB table.
-
-       This main routine must be extended to:
-       1. Connect to the appropriate queues
-       2. Open the appropriate table
-       3. Go into an infinite loop that
-          - reads a requeat from the SQS queue, if available
-          - handles the request idempotently if it is a duplicate
-          - if this is the first time for this request
-            * do the requested database operation
-            * record the message id and response
-            * put the response on the output queue
-'''
