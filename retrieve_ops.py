@@ -76,3 +76,10 @@ def retrieve_by_name(table, name, response):
 					}]
 				}
 
+def retrieve_list(table, response) :
+	result_set = table.scan()
+	var = []
+	for user in result_set:
+		id = int(user["id"])
+		var.append({"type": "users", "id": id})
+	return {"data":var}

@@ -54,24 +54,29 @@ def handle_args():
 
 
 def writeTestRequestToInputQueue():
-  # Uncomment this block to put a test message on the input queue that the
+  # Used to put a test message on the input queue that the
   #  while True loop below will pull off of.
   testMsg = boto.sqs.message.Message()
   msgBody = {}
   msgBody['msg_id'] = "dq3rq32d"
-  # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":18, "name":None}
+  # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":2222, "name":None}
   # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":None, "name":"Smith"}
   # msgBody['jsonBody'] = {"action":"add", "on":"users", "id":2222, "name":"Subir"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"users", "id":2222, "name":None}
   # msgBody['jsonBody'] = {"action":"delete", "on":"users", "id":None, "name":"Subir"}
   # msgBody['jsonBody'] = {"action":"add", "on":"activity", "id":2222, "name":"Skiing"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
-  msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
-
+  # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
+  # msgBody['jsonBody'] = {"action":"get_list", "on":"users", "id":None, "name":None}
 
   testMsg.set_body(json.dumps(msgBody))
 
   inputQueue.write(testMsg)
+
+def writeMsgToOutputQueue(returnResponse):
+  outputMsg = boto.sqs.message.Message()
+  outputMsg.set_body(json.dumps(returnResponse))
+  outputQueue.write(outputMsg)
 
 
 if __name__ == "__main__":
@@ -96,6 +101,7 @@ if __name__ == "__main__":
     sys.stderr.write("Invalid Arguement Suffix\n")
     sys.exit(1)  
 
+  # Uncomment to add a test message to the input queue
   writeTestRequestToInputQueue()
 
   # Begin reading from the queue. Exit when timed out.
@@ -119,6 +125,9 @@ if __name__ == "__main__":
         print("Process Request For msg_id: " + msg_id)
         print("Action: {0}, On: {1}, ID: {2}, Name: {3}".format(request_action, request_on, request_id, request_name))
 
+        # Delete message off the queue
+        inputQueue.delete_message(msg_in)
+
 
         # Check if the request is a duplicate (cached)
         if msg_id in seenRequests:
@@ -126,7 +135,7 @@ if __name__ == "__main__":
 
           returnResponse = seenRequests[msg_id]
 
-          # outputQueue.write(returnResponse)
+          writeMsgToOutputQueue(returnResponse)
           print(returnResponse)
 
         else:
@@ -134,6 +143,7 @@ if __name__ == "__main__":
 
           httpResp = response # This creates the bottle.response object
 
+          # Depending on whats requested follow the appropiate API path
           if request_action == "add" and request_on == "users" and request_id != None and request_name != None:
             print("Adding new user")
             requestResponse = create_ops.do_create(request, table, request_id, request_name, httpResp)
@@ -164,6 +174,7 @@ if __name__ == "__main__":
           
           elif request_action == "get_list" and request_on == "users" and request_id == None and request_name == None:
             print("Getting list of users")
+            requestResponse = retrieve_ops.retrieve_list(table, response)
           
           else:
             print("INVALID JSON PARAMETERS")
@@ -182,7 +193,7 @@ if __name__ == "__main__":
 
           seenRequests[msg_id] = returnResponse
 
-          # outputQueue.write(returnResponse)
+          writeMsgToOutputQueue(returnResponse)
           print(returnResponse)
 
 
