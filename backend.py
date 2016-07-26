@@ -59,6 +59,8 @@ def writeTestRequestToInputQueue():
   testMsg = boto.sqs.message.Message()
   msgBody = {}
   msgBody['msg_id'] = "dq3rq32d"
+
+  # Uncomment only one of these (since same msg_id will result it in thinking its same request)
   # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":2222, "name":None}
   # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":None, "name":"Smith"}
   # msgBody['jsonBody'] = {"action":"add", "on":"users", "id":2222, "name":"Subir"}
@@ -67,7 +69,7 @@ def writeTestRequestToInputQueue():
   # msgBody['jsonBody'] = {"action":"add", "on":"activity", "id":2222, "name":"Skiing"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
-  # msgBody['jsonBody'] = {"action":"get_list", "on":"users", "id":None, "name":None}
+  msgBody['jsonBody'] = {"action":"get_list", "on":"users", "id":None, "name":None}
 
   testMsg.set_body(json.dumps(msgBody))
 
@@ -158,23 +160,23 @@ if __name__ == "__main__":
 
           elif request_action == "delete" and request_on == "users" and request_id != None and request_name == None:
             print("Deleting user by id")
-            requestResponse = delete_ops.delete_by_id(table, request_id, response)
+            requestResponse = delete_ops.delete_by_id(table, request_id, httpResp)
 
           elif request_action == "delete" and request_on == "users" and request_id == None and request_name != None:
             print("Deleting user by name")
-            requestResponse = delete_ops.delete_by_name(table, request_name, response)
+            requestResponse = delete_ops.delete_by_name(table, request_name, httpResp)
           
           elif request_action == "add" and request_on == "activity" and request_id != None and request_name != None:
             print("Adding new activity")
-            requestResponse = update_ops.add_activity(table, request_id, request_name, response)
+            requestResponse = update_ops.add_activity(table, request_id, request_name, httpResp)
           
           elif request_action == "delete" and request_on == "activity" and request_id != None and request_name != None:
             print("Deleting activity")
-            requestResponse = update_ops.delete_activity(table, request_id, request_name, response)
+            requestResponse = update_ops.delete_activity(table, request_id, request_name, httpResp)
           
           elif request_action == "get_list" and request_on == "users" and request_id == None and request_name == None:
             print("Getting list of users")
-            requestResponse = retrieve_ops.retrieve_list(table, response)
+            requestResponse = retrieve_ops.retrieve_list(table, httpResp)
           
           else:
             print("INVALID JSON PARAMETERS")
