@@ -23,7 +23,7 @@ Q_OUT_NAME = 'a3_out'
 # Respond to health check
 @get('/')
 def health_check():
-    response.status = 200
+    response.status = 1
     return "Healthy"
 
 '''
@@ -33,121 +33,137 @@ def health_check():
 def create_route():
     pass
 '''
+def make_response(result):
+    response.status = result['httpStatusCode'];
+    response.body = json.dumps(result['jsonBody']);
+    return result;
+
 @post('/users')
 def create_route():
     ct = request.get_header('content-type')
     if ct != 'application/json':
-        return abort(response, 400, [
-            "request content-type unacceptable:  body must be "
-            "'application/json' (was '{0}')".format(ct)])
+        return "request content-type unacceptable"
     id = request.json["id"] # In JSON, id is already an integer
     name = request.json["name"]
 
     print "creating id {0}, name {1}\n".format(id, name)
-    json = {"action":"add", "on":"users", "id":id, "name":name};
-    json.dumps(json)
+    msg = {"jsonBody":{"action":"add", "on":"users", "id":id, "name":name}};
+    msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
-    msg_a.set_body(json)
+    msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
-    msg_b.set_body(json)
+    msg_b.set_body(msg)
     # Pass the called routine the response object to construct a response from
     result = send_msg_ob.send_msg(msg_a, msg_b);
+    return make_response(result);
 
 @get('/users/<id>')
 def get_id_route(id):
     id = int(id) # In URI, id is a string and must be made int
     print "Retrieving id {0}\n".format(id)
-    json = {"action":"retrieve", "on":"users", "id":id, "name":None}
-    json.dumps(json)
+    msg = {"jsonBody":{"action":"retrieve", "on":"users", "id":id, "name":None}}
+    msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
-    msg_a.set_body(json)
+    msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
-    msg_b.set_body(json)
-    # Pass the called routine the response object to construct a response from
+    msg_b.set_body(msg)
+    # Pass the called routine the response object to construct a response from~
     result = send_msg_ob.send_msg(msg_a, msg_b);
+    return make_response(result);
 
-    
+
 
 @get('/names/<name>')
 def get_name_route(name):
     print "Retrieving name {0}\n".format(name)
-    json = {"action":"retrieve", "on":"users", "id":None, "name":name}
-    json.dumps(json)
-    result = send_msg_ob.send_msg(json, json);
+    msg = {"jsonBody":{"action":"retrieve", "on":"users", "id":None, "name":name}}
+    msg = json.dumps(msg)
+    msg_a = boto.sqs.message.Message()
+    msg_a.set_body(msg)
+    msg_b = boto.sqs.message.Message()
+    msg_b.set_body(msg)
+    # Pass the called routine the response object to construct a response from~
+    result = send_msg_ob.send_msg(msg_a, msg_b);
+    return make_response(result);
 
-    
+
 
 @delete('/users/<id>')
 def delete_id_route(id):
     id = int(id)
     print "Deleting id {0}\n".format(id)
-    json = {"action":"delete", "on":"users", "id":id, "name":None}
-    json.dumps(json)
+    msg = {"jsonBody":{"action":"delete", "on":"users", "id":id, "name":None}}
+    msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
-    msg_a.set_body(json)
+    msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
-    msg_b.set_body(json)
+    msg_b.set_body(msg)
     # Pass the called routine the response object to construct a response from
     result = send_msg_ob.send_msg(msg_a, msg_b);
+    return make_response(result);
 
-    
+
 
 @delete('/names/<name>')
 def delete_name_route(name):
-    json = {"action":"delete", "on":"users", "id":id, "name":None}
-    json.dumps(json)
+    msg = {"jsonBody":{"action":"delete", "on":"users", "id":None, "name":name}}
+    msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
-    msg_a.set_body(json)
+    msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
-    msg_b.set_body(json)
+    msg_b.set_body(msg)
     # Pass the called routine the response object to construct a response from
     result = send_msg_ob.send_msg(msg_a, msg_b);
+    return make_response(result);
 
-    
+
 
 @put('/users/<id>/activities/<activity>')
 def add_activity_route(id, activity):
     id = int(id)
     print "adding activity for id {0}, activity {1}\n".format(id, activity)
-    json = {"action":"add", "on":"activity", "id":id, "name":activity}
-    json.dumps(json)
+    msg = {"jsonBody":{"action":"add", "on":"activity", "id":id, "name":activity}}
+    msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
-    msg_a.set_body(json)
+    msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
-    msg_b.set_body(json)
+    msg_b.set_body(msg)
     # Pass the called routine the response object to construct a response from
     result = send_msg_ob.send_msg(msg_a, msg_b);
-    
-    
+    return make_response(result);
+
+
 
 @delete('/users/<id>/activities/<activity>')
 def delete_activity_route(id, activity):
     id = int(id)
     print "deleting activity for id {0}, activity {1}\n".format(id, activity)
-    json = {"action":"delete", "on":"activity", "id":id, "name":activity}
-    json.dumps(json)
+    msg = {"jsonBody":{"action":"delete", "on":"activity", "id":id, "name":activity}}
+    msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
-    msg_a.set_body(json)
+    msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
-    msg_b.set_body(json)
+    msg_b.set_body(msg)
     # Pass the called routine the response object to construct a response from
     result = send_msg_ob.send_msg(msg_a, msg_b);
+    return make_response(result);
 
-    
-    
+
+
 @get('/users')
 def get_list_route():
     print "Retrieving users {0}\n".format(type, id)
-    json = {"action":"get_list", "on":"users", "id":None, "name": None}
-    json.dumps(json)
+    msg = {"jsonBody":{"action":"get_list", "on":"users", "id":None, "name": None}}
+    msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
-    msg_a.set_body(json)
+    msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
-    msg_b.set_body(json)
+    msg_b.set_body(msg)
     # Pass the called routine the response object to construct a response from
     result = send_msg_ob.send_msg(msg_a, msg_b);
+    return make_response(result);
 
-    
+
 
 
 '''
@@ -163,7 +179,7 @@ def get_list_route():
 
        send_msg_ob.send_msg(msg_a, msg_b)
 
-   where 
+   where
 
        msg_a is the boto.message.Message() you wish to send to a3_in_a.
        msg_b is the boto.message.Message() you wish to send to a3_in_b.
@@ -182,7 +198,7 @@ def set_send_msg(send_msg_ob_p):
 
 q_in_a = Q_IN_NAME_BASE + "_a";
 q_in_b = Q_IN_NAME_BASE + "_b";
-q_out = None
+q_out = Q_OUT_NAME
 try:
     conn = boto.sqs.connect_to_region(AWS_REGION)
     if conn == None:
@@ -200,60 +216,45 @@ except Exception as e:
 
 
 def write_to_queues(msg_a, msg_b):
-    msg_a_id = q_in_a.send_message(msg_a);
-    msg_b_id = q_in_b.send_message(msg_b);
-
+    msg_a_id = q_in_a.write(msg_a);
+    msg_b_id = q_in_b.write(msg_b);
 
 '''
    EXTEND:
    Manage the data structures for detecting the first and second
    responses and any duplicate responses.
 '''
-
 # Define any necessary data structures globally here
 firstResponseId=[]
-secondResPonseId=[]
-pairId[]
+secondResponseId=[]
+pairId={}
+partnerList={}
 
 def is_first_response(id):
     # EXTEND:
     # Return True if this message is the first response to a request
     if id not in firstResponseId:
-        if id in pairId and len(pariId)>1:
-            return True
-        else:
-            return False   #it's 2nd response response.
-    else:
-        return False #It's dulplicate response.
-    pass
+        if id not in secondResponseId:
+            return True;
+    return False;
 
 def is_second_response(id):
     # EXTEND:
     # Return True if this message is the second response to a request
-    if id not in secondResPonseId(id):
-      if id in pairId:
-        return True
-      else:
-        return False
-    else:
-        return False   #It's dulplicate response
-    pass
+    if id in firstResponseId:
+        if id not in secondResponseId:
+            return True;
+    return False;
 
 def get_response_action(id):
     # EXTEND:
     # Return the action for this message
-    partnerList=pariId
-    if is_first_response:
-      pairId.pop(pairId.index[id])
-    if is_second_response:
-      pairId.pop(pairId.index[id])
-    pass
+    return pairId.get(id);
 
 def get_partner_response(id):
     # EXTEND:
     # Return the id of the partner for this message, if any
-    partnerId=partnerList[partnerList.index(id)-1]
-    return partnerId
+    return partnerList.get(id);
     pass
 
 def mark_first_response(id):
@@ -265,12 +266,13 @@ def mark_first_response(id):
 def mark_second_response(id):
     # EXTEND:
     # Update the data structures to note that the second response has been received
-    secondResPonseId.append(id)
+    secondResponseId.append(id)
     pass
 
 def clear_duplicate_response(id):
     # EXTEND:
     # Do anything necessary (if at all) when a duplicate response has been received
+    pairId=[]  #empty the pairId list
     pass
 
 def set_dup_DS(action, sent_a, sent_b):
@@ -287,7 +289,14 @@ def set_dup_DS(action, sent_a, sent_b):
                msg_id attribute of the JSON object returned by the
                response from the backend code that you write.
     '''
-    pairId.append(sent_a[msg_id])
-    pairId.append(sent_b[msg_id])
+ 
+    msg_a = json.loads(sent_a.get_body())
+    msg_b = json.loads(sent_b.get_body())
+    msg_a_id = sent_a.id
+    msg_b_id = sent_b.id
+    pairId[msg_a_id] = action;
+    pairId[msg_b_id] = action;
+    partnerList[msg_a_id] = msg_b_id;
+    partnerList[msg_b_id] = msg_a_id;
 
     pass
