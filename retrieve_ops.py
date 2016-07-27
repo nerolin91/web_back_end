@@ -82,4 +82,5 @@ def retrieve_list(table, response) :
 	for user in result_set:
 		id = int(user["id"])
 		var.append({"type": "users", "id": id})
+	response.status = 200
 	return {"data":var}

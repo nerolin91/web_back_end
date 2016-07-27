@@ -33,9 +33,8 @@ from front_ops import (clear_duplicate_response,
     )
 
 # Constants
-DEFAULT_IP = "52.40.238.31"
+DEFAULT_IP = "0.0.0.0"
 DEFAULT_PORT = 80
-
 MAX_TIME_S = 3600 # One hour
 MAX_WAIT_S = 20 # SQS sets max. of 20 s
 DEFAULT_VIS_TIMEOUT_S = 60
@@ -66,13 +65,12 @@ def get_responses(q_out):
        manages it all.
     '''
     wait_start = time.time()
-    print "Starting get_response loop"
+    print "Starting get_response loop\n"
     while True:
         msg_out = q_out.read(wait_time_seconds=MAX_WAIT_S, visibility_timeout=DEFAULT_VIS_TIMEOUT_S)
         if msg_out:
             body = json.loads(msg_out.get_body())
             id = body['msg_id']
-
             with SendMsg.guard(guard_resps) as gr:
                 if is_first_response(id):
                     print "Routing respond msg_id {0} as first response".format(id)
