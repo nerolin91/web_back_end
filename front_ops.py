@@ -272,13 +272,6 @@ def mark_second_response(id):
 def clear_duplicate_response(id):
     # EXTEND:
     # Do anything necessary (if at all) when a duplicate response has been received
-    partner_id = partnerList.get(id);
-    firstResponseId.remove(id);
-    firstResponseId.remove(partner_id);
-    secondResponseId.remove(id);
-    secondResponseId.remove(partner_id);
-    partnerList.pop(id);
-    partnerList.pop(partner_id);
     pass
 
 def set_dup_DS(action, sent_a, sent_b):
