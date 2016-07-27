@@ -278,6 +278,8 @@ def clear_duplicate_response(id):
 def set_dup_DS(action, sent_a, sent_b):
     '''
        EXTEND:
+       This function allowing you to update your data structures with
+       the ids returned by SQS for msg_a and msg_b.
        Set up the data structures to identify and detect duplicates
        action: The action to perform on receipt of the response.
                Opaque data type: Simply save it, do not interpret it.
@@ -295,6 +297,7 @@ def set_dup_DS(action, sent_a, sent_b):
     msg_a_id = msg_a['msg_id']
     msg_b_id = msg_b['msg_id']
     pairId.append(msg_a_id)
-    pairId.append(msg_b_id)
+    pairId.append(msg_b_id)  #store original two ids in pairId list
+       
 
     pass
