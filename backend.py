@@ -56,6 +56,9 @@ def handle_args():
 def writeTestRequestToInputQueue():
   # Used to put a test message on the input queue that the
   #  while True loop below will pull off of.
+
+  print("** WRITING TEST MESSAGE TO INPUT QUEUE ENABLED **")
+
   testMsg = boto.sqs.message.Message()
   msgBody = {}
   msgBody['msg_id'] = "dq3rq32d"
