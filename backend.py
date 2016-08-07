@@ -84,7 +84,7 @@ def writeMsgToOutputQueue(returnResponse):
   outputMsg.set_body(json.dumps(returnResponse))
   outputQueue.write(outputMsg)
 
-def processRequest(body):
+def processRequest(body, opnum):
   # Get and print the parameters from the JSON
   msg_id = body['msg_id']
   msg_body = body['jsonBody']
@@ -158,6 +158,7 @@ def processRequest(body):
     returnResponse['jsonBody'] = requestResponse
     returnResponse['httpStatusCode'] = httpResp.status_code # IE: 404, 200, etc
     returnResponse['msg_id'] = msg_id
+    returnResponse['opnum'] = opnum
 
     seenRequests[msg_id] = returnResponse
 
@@ -190,11 +191,15 @@ if __name__ == "__main__":
     sys.stderr.write("Invalid Arguement Suffix\n")
     sys.exit(1)  
 
-  # Uncomment to add a test message to the input queue: IMPORTANT: Comment out for production code
-  #writeTestRequestToInputQueue(1)
-  #writeTestRequestToInputQueue(3)
-  #writeTestRequestToInputQueue(4)
-  #writeTestRequestToInputQueue(2)
+  # Uncomment to add a test messages to the input queue: IMPORTANT: Comment out for production code
+  #  NOTE: The order of these test requests aren't guarnteed, SQS code to write to queue seems to be multi-threaded
+  # writeTestRequestToInputQueue(1)
+  # writeTestRequestToInputQueue(3)
+  # writeTestRequestToInputQueue(4)
+  # writeTestRequestToInputQueue(2)
+  # writeTestRequestToInputQueue(6)
+  # writeTestRequestToInputQueue(5)
+  # writeTestRequestToInputQueue(7)
 
   # Begin reading from the queue. Exit when timed out.
   wait_start = time.time()
@@ -216,16 +221,16 @@ if __name__ == "__main__":
 
         # If we got the opnum we were expecting then continue as usual, otherwise stash the request.
         if expectedOpnum == opnum_from_request:
-          print("  Encountered EXPECTED Opnum: {0}".format(opnum_from_request))
+          print("  *Encountered EXPECTED Opnum: {0}".format(opnum_from_request))
           lastOpnum = opnum_from_request
-          processRequest(body)
+          processRequest(body, opnum_from_request)
 
           # If we have any pending requests that were waiting for this opnum to come up; do them now.
           pendingOpnum = expectedOpnum + 1
           while pendingOpnum in pendingList:
-            print("\n  Processing PENDING request with opnum: {0}\n".format(pendingOpnum))
-            processRequest(pendingList[pendingOpnum])
-            # Update lastOpnum because we just fufilled a request from the pending list
+            print("\n  *Processing PENDING request with opnum: {0}\n".format(pendingOpnum))
+            processRequest(pendingList[pendingOpnum], pendingOpnum)
+            # Update lastOpnum because we just fufilled a new request from the pending list
             lastOpnum = pendingOpnum
             del pendingList[pendingOpnum]
             # Increment so the while loop can check if the next request is pending as well
@@ -234,7 +239,7 @@ if __name__ == "__main__":
         elif opnum_from_request > expectedOpnum:
           print("Stashing Opnum: {0}".format(opnum_from_request))
           pendingList[opnum_from_request] = body
-          continue 
+          #continue 
         
         wait_start = time.time()
     elif time.time() - wait_start > MAX_TIME_S:
