@@ -1,4 +1,4 @@
-''' Delete operations for Assignment 2 of CMPT 474 '''
+''' Delete operations for Assignment 2, 3 and 4 of CMPT 474 '''
 
 # Installed packages
 from boto.dynamodb2.items import Item

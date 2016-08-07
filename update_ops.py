@@ -1,4 +1,4 @@
-''' Add_activities function for CMPT 474 Assignment 2 '''
+''' Add_activities function for CMPT 474 Assignment 2, 3 and 4 '''
 from boto.dynamodb2.items import Item
 from boto.dynamodb2.exceptions import ItemNotFound
 
