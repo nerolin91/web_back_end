@@ -53,7 +53,7 @@ def handle_args():
     return argp.parse_args()
 
 
-def writeTestRequestToInputQueue():
+def writeTestRequestToInputQueue(seq_num):
   # Used to put a test message on the input queue that the
   #  while True loop below will pull off of.
 
@@ -61,7 +61,8 @@ def writeTestRequestToInputQueue():
 
   testMsg = boto.sqs.message.Message()
   msgBody = {}
-  msgBody['msg_id'] = "dq3rq32d"
+  msgBody['msg_id'] = "r3quest" + str(seq_num)
+  msgBody['opnum'] = seq_num
 
   # Uncomment only one of these (since same msg_id will result it in thinking its same request)
   # msgBody['jsonBody'] = {"action":"retrieve", "on":"users", "id":2222, "name":None}
@@ -72,7 +73,7 @@ def writeTestRequestToInputQueue():
   # msgBody['jsonBody'] = {"action":"add", "on":"activity", "id":2222, "name":"Skiing"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
-  # msgBody['jsonBody'] = {"action":"get_list", "on":"users", "id":None, "name":None}
+  msgBody['jsonBody'] = {"action":"get_list", "on":"users", "id":None, "name":None}
 
   testMsg.set_body(json.dumps(msgBody))
 
@@ -109,7 +110,9 @@ if __name__ == "__main__":
     sys.exit(1)  
 
   # Uncomment to add a test message to the input queue: IMPORTANT: Comment for production code
-  #writeTestRequestToInputQueue()
+  #writeTestRequestToInputQueue(1)
+  #writeTestRequestToInputQueue(3)
+  #writeTestRequestToInputQueue(2)
 
   # Begin reading from the queue. Exit when timed out.
   wait_start = time.time()
@@ -122,6 +125,10 @@ if __name__ == "__main__":
 
         #get opnum of message
         opnum = body['opnum']
+        print("  ~~~~~~~~~~")
+        print("  Opnum: {0}".format(opnum))
+        print("  Pending-List: {0}".format(pendingList))
+        print("  ~~~~~~~~~~")
 
         expectedOpnum = lastOpnum + 1
         if opnum == expectedOpnum:
