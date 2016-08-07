@@ -61,7 +61,7 @@ def writeTestRequestToInputQueue(seq_num):
 
   testMsg = boto.sqs.message.Message()
   msgBody = {}
-  msgBody['msg_id'] = "r3quest" + str(seq_num)
+  msgBody['msg_id'] = "testMsgId-OpnumIs" + str(seq_num)
   msgBody['opnum'] = seq_num
 
   # Uncomment only one of these (since same msg_id will result it in thinking its same request)
@@ -83,6 +83,87 @@ def writeMsgToOutputQueue(returnResponse):
   outputMsg = boto.sqs.message.Message()
   outputMsg.set_body(json.dumps(returnResponse))
   outputQueue.write(outputMsg)
+
+def processRequest(body):
+  # Get and print the parameters from the JSON
+  msg_id = body['msg_id']
+  msg_body = body['jsonBody']
+  request_action = msg_body['action']
+  request_on = msg_body['on']
+  request_id = msg_body['id']
+  request_name = msg_body['name']
+
+  print("Process Request For msg_id: " + msg_id)
+  print("Action: {0}, On: {1}, ID: {2}, Name: {3}".format(request_action, request_on, request_id, request_name))
+
+
+  # Check if the request is a duplicate (cached)
+  if msg_id in seenRequests:
+    print("\nDUPLICATE REQUEST: Passing back cached response\n")
+
+    returnResponse = seenRequests[msg_id]
+
+    writeMsgToOutputQueue(returnResponse)
+    print(returnResponse)
+
+  else:
+    print("\nNON-DUPLICATE REQUEST: Hitting the database\n")
+
+    httpResp = response # This creates the bottle.response object
+
+    # Depending on whats requested follow the appropiate API path
+    if request_action == "add" and request_on == "users" and request_id != None and request_name != None:
+      print("Adding new user")
+      requestResponse = create_ops.do_create(request, table, request_id, request_name, httpResp)
+
+    elif request_action == "retrieve" and request_on == "users" and request_id != None and request_name == None:
+      print("Retrieving user by ID")
+      requestResponse = retrieve_ops.retrieve_by_id(table, request_id, httpResp)
+
+    elif request_action == "retrieve" and request_on == "users" and request_id == None and request_name != None:
+      print("Retrieving user by name")
+      requestResponse = retrieve_ops.retrieve_by_name(table, request_name, httpResp)
+
+    elif request_action == "delete" and request_on == "users" and request_id != None and request_name == None:
+      print("Deleting user by id")
+      requestResponse = delete_ops.delete_by_id(table, request_id, httpResp)
+
+    elif request_action == "delete" and request_on == "users" and request_id == None and request_name != None:
+      print("Deleting user by name")
+      requestResponse = delete_ops.delete_by_name(table, request_name, httpResp)
+    
+    elif request_action == "add" and request_on == "activity" and request_id != None and request_name != None:
+      print("Adding new activity")
+      requestResponse = update_ops.add_activity(table, request_id, request_name, httpResp)
+    
+    elif request_action == "delete" and request_on == "activity" and request_id != None and request_name != None:
+      print("Deleting activity")
+      requestResponse = update_ops.delete_activity(table, request_id, request_name, httpResp)
+    
+    elif request_action == "get_list" and request_on == "users" and request_id == None and request_name == None:
+      print("Getting list of users")
+      requestResponse = retrieve_ops.retrieve_list(table, httpResp)
+    
+    else:
+      print("INVALID JSON PARAMETERS")
+      print(request_action)
+      print(request_on)
+      print(request_id)
+      print(request_name)
+      return
+
+
+    # Construct the return response
+    returnResponse = {}
+    returnResponse['jsonBody'] = requestResponse
+    returnResponse['httpStatusCode'] = httpResp.status_code # IE: 404, 200, etc
+    returnResponse['msg_id'] = msg_id
+
+    seenRequests[msg_id] = returnResponse
+
+    writeMsgToOutputQueue(returnResponse)
+    print(returnResponse)
+  # End If - Duplicate message check 
 
 
 if __name__ == "__main__":
@@ -109,10 +190,11 @@ if __name__ == "__main__":
     sys.stderr.write("Invalid Arguement Suffix\n")
     sys.exit(1)  
 
-  # Uncomment to add a test message to the input queue: IMPORTANT: Comment for production code
-  #writeTestRequestToInputQueue(1)
-  #writeTestRequestToInputQueue(3)
-  #writeTestRequestToInputQueue(2)
+  # Uncomment to add a test message to the input queue: IMPORTANT: Comment out for production code
+  writeTestRequestToInputQueue(1)
+  writeTestRequestToInputQueue(3)
+  writeTestRequestToInputQueue(4)
+  writeTestRequestToInputQueue(2)
 
   # Begin reading from the queue. Exit when timed out.
   wait_start = time.time()
@@ -121,111 +203,36 @@ if __name__ == "__main__":
     print(" READING MESSAGE OFF THE INPUT QUEUE")
     msg_in = inputQueue.read(wait_time_seconds=MAX_WAIT_S, visibility_timeout=DEFAULT_VIS_TIMEOUT_S)
     if msg_in:
+        # Delete message off the queue
+        inputQueue.delete_message(msg_in)   
+
+        # Get the body of the SQS message
         body = json.loads(msg_in.get_body())
 
-        #get opnum of message
-        opnum = body['opnum']
-        print("  ~~~~~~~~~~")
-        print("  Opnum: {0}".format(opnum))
-        print("  Pending-List: {0}".format(pendingList))
-        print("  ~~~~~~~~~~")
+        # Get opnum of message
+        opnum_from_request = body['opnum']
 
         expectedOpnum = lastOpnum + 1
-        if opnum == expectedOpnum:
-            lastOpnum = opnum
-        elif opnum > expectedOpnum:
-            pendingList[opnum] = body
-            if expectedOpnum in pendingList:
-                body = pendingList[expectedOpnum]
-                del pendingList[expectedOpnum]
-            else:
-                continue         
+
+        if expectedOpnum == opnum_from_request:
+          print("  Encountered EXPECTED Opnum: {0}".format(opnum_from_request))
+          lastOpnum = opnum_from_request
+          processRequest(body)
+
+          # If we have any pending requests that were waiting for this opnum to come up; do them now.
+          pendingOpnum = expectedOpnum + 1
+          while (len(pendingList.keys()) != 0) and (pendingOpnum in pendingList):
+            print("\n  Processing PENDING request with opnum: {0}\n".format(pendingOpnum))
+            processRequest(pendingList[pendingOpnum])
+            lastOpnum = pendingOpnum
+            del pendingList[pendingOpnum]
+            pendingOpnum = pendingOpnum + 1
+
+        elif opnum_from_request > expectedOpnum:
+          print("Stashing Opnum: {0}".format(opnum_from_request))
+          pendingList[opnum_from_request] = body
+          continue 
         
-        msg_id = body['msg_id']
-
-        
-        # Get and print the parameters from the JSON
-        msg_body = body['jsonBody']
-        request_action = msg_body['action']
-        request_on = msg_body['on']
-        request_id = msg_body['id']
-        request_name = msg_body['name']
-
-        print("Process Request For msg_id: " + msg_id)
-        print("Action: {0}, On: {1}, ID: {2}, Name: {3}".format(request_action, request_on, request_id, request_name))
-
-        # Delete message off the queue
-        inputQueue.delete_message(msg_in)
-
-
-        # Check if the request is a duplicate (cached)
-        if msg_id in seenRequests:
-          print("\nDUPLICATE REQUEST: Passing back cached response\n")
-
-          returnResponse = seenRequests[msg_id]
-
-          writeMsgToOutputQueue(returnResponse)
-          print(returnResponse)
-
-        else:
-          print("\nNON-DUPLICATE REQUEST: Hitting the database\n")
-
-          httpResp = response # This creates the bottle.response object
-
-          # Depending on whats requested follow the appropiate API path
-          if request_action == "add" and request_on == "users" and request_id != None and request_name != None:
-            print("Adding new user")
-            requestResponse = create_ops.do_create(request, table, request_id, request_name, httpResp)
-
-          elif request_action == "retrieve" and request_on == "users" and request_id != None and request_name == None:
-            print("Retrieving user by ID")
-            requestResponse = retrieve_ops.retrieve_by_id(table, request_id, httpResp)
-
-          elif request_action == "retrieve" and request_on == "users" and request_id == None and request_name != None:
-            print("Retrieving user by name")
-            requestResponse = retrieve_ops.retrieve_by_name(table, request_name, httpResp)
-
-          elif request_action == "delete" and request_on == "users" and request_id != None and request_name == None:
-            print("Deleting user by id")
-            requestResponse = delete_ops.delete_by_id(table, request_id, httpResp)
-
-          elif request_action == "delete" and request_on == "users" and request_id == None and request_name != None:
-            print("Deleting user by name")
-            requestResponse = delete_ops.delete_by_name(table, request_name, httpResp)
-          
-          elif request_action == "add" and request_on == "activity" and request_id != None and request_name != None:
-            print("Adding new activity")
-            requestResponse = update_ops.add_activity(table, request_id, request_name, httpResp)
-          
-          elif request_action == "delete" and request_on == "activity" and request_id != None and request_name != None:
-            print("Deleting activity")
-            requestResponse = update_ops.delete_activity(table, request_id, request_name, httpResp)
-          
-          elif request_action == "get_list" and request_on == "users" and request_id == None and request_name == None:
-            print("Getting list of users")
-            requestResponse = retrieve_ops.retrieve_list(table, httpResp)
-          
-          else:
-            print("INVALID JSON PARAMETERS")
-            print(request_action)
-            print(request_on)
-            print(request_id)
-            print(request_name)
-            continue
-
-
-          # Construct the return response
-          returnResponse = {}
-          returnResponse['jsonBody'] = requestResponse
-          returnResponse['httpStatusCode'] = httpResp.status_code # IE: 404, 200, etc
-          returnResponse['msg_id'] = msg_id
-
-          seenRequests[msg_id] = returnResponse
-
-          writeMsgToOutputQueue(returnResponse)
-          print(returnResponse)
-
-
         wait_start = time.time()
     elif time.time() - wait_start > MAX_TIME_S:
         print "\nNo messages on input queue for {0} seconds. Server no longer reading response queue {1}.".format(MAX_TIME_S, q_out.name)
