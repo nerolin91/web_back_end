@@ -89,6 +89,8 @@ if __name__ == "__main__":
   outputQueue = conn_sqs.create_queue(Q_OUT_NAME)
   table = None
   seenRequests = {}
+  pendingList = {}
+  lastOpnum = 0
 
 
   # Parse the input argument (Passed in as "$ ./backend.py _a" or "$ ./backend.py _b")
@@ -114,9 +116,19 @@ if __name__ == "__main__":
     msg_in = inputQueue.read(wait_time_seconds=MAX_WAIT_S, visibility_timeout=DEFAULT_VIS_TIMEOUT_S)
     if msg_in:
         body = json.loads(msg_in.get_body())
+
+        #get opnum of message
+        opnum = body['opnum']
+
+        if (opnum == lastOpnum + 1):
+            #process request
+        elif (opnum > lastOpnum + 1):
+            
+            
+        
         msg_id = body['msg_id']
 
-
+        
         # Get and print the parameters from the JSON
         msg_body = body['jsonBody']
         request_action = msg_body['action']
