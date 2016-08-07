@@ -123,11 +123,16 @@ if __name__ == "__main__":
         #get opnum of message
         opnum = body['opnum']
 
-        if (opnum == lastOpnum + 1):
-            #process request
-        elif (opnum > lastOpnum + 1):
-            
-            
+        expectedOpnum = lastOpnum + 1
+        if opnum == expectedOpnum:
+            lastOpnum = opnum
+        elif opnum > expectedOpnum:
+            pendingList[opnum] = body
+            if expectedOpnum in pendingList:
+                body = pendingList[expectedOpnum]
+                del pendingList[expectedOpnum]
+            else:
+                continue         
         
         msg_id = body['msg_id']
 
