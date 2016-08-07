@@ -191,10 +191,10 @@ if __name__ == "__main__":
     sys.exit(1)  
 
   # Uncomment to add a test message to the input queue: IMPORTANT: Comment out for production code
-  writeTestRequestToInputQueue(1)
-  writeTestRequestToInputQueue(3)
-  writeTestRequestToInputQueue(4)
-  writeTestRequestToInputQueue(2)
+  #writeTestRequestToInputQueue(1)
+  #writeTestRequestToInputQueue(3)
+  #writeTestRequestToInputQueue(4)
+  #writeTestRequestToInputQueue(2)
 
   # Begin reading from the queue. Exit when timed out.
   wait_start = time.time()
@@ -214,6 +214,7 @@ if __name__ == "__main__":
 
         expectedOpnum = lastOpnum + 1
 
+        # If we got the opnum we were expecting then continue as usual, otherwise stash the request.
         if expectedOpnum == opnum_from_request:
           print("  Encountered EXPECTED Opnum: {0}".format(opnum_from_request))
           lastOpnum = opnum_from_request
@@ -221,11 +222,13 @@ if __name__ == "__main__":
 
           # If we have any pending requests that were waiting for this opnum to come up; do them now.
           pendingOpnum = expectedOpnum + 1
-          while (len(pendingList.keys()) != 0) and (pendingOpnum in pendingList):
+          while pendingOpnum in pendingList:
             print("\n  Processing PENDING request with opnum: {0}\n".format(pendingOpnum))
             processRequest(pendingList[pendingOpnum])
+            # Update lastOpnum because we just fufilled a request from the pending list
             lastOpnum = pendingOpnum
             del pendingList[pendingOpnum]
+            # Increment so the while loop can check if the next request is pending as well
             pendingOpnum = pendingOpnum + 1
 
         elif opnum_from_request > expectedOpnum:
