@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-  Back end DB server for Assignment 3, CMPT 474.
+  Back end DB server for Assignment 3 and 4, CMPT 474.
 '''
 
 # Library packages
@@ -69,7 +69,7 @@ def writeTestRequestToInputQueue():
   # msgBody['jsonBody'] = {"action":"add", "on":"activity", "id":2222, "name":"Skiing"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
   # msgBody['jsonBody'] = {"action":"delete", "on":"activity", "id":2222, "name":"Skiing"}
-  msgBody['jsonBody'] = {"action":"get_list", "on":"users", "id":None, "name":None}
+  # msgBody['jsonBody'] = {"action":"get_list", "on":"users", "id":None, "name":None}
 
   testMsg.set_body(json.dumps(msgBody))
 
@@ -103,8 +103,8 @@ if __name__ == "__main__":
     sys.stderr.write("Invalid Arguement Suffix\n")
     sys.exit(1)  
 
-  # Uncomment to add a test message to the input queue
-  writeTestRequestToInputQueue()
+  # Uncomment to add a test message to the input queue: IMPORTANT: Comment for production code
+  #writeTestRequestToInputQueue()
 
   # Begin reading from the queue. Exit when timed out.
   wait_start = time.time()
