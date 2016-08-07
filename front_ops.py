@@ -47,6 +47,7 @@ def create_route():
     name = request.json["name"]
 
     print "creating id {0}, name {1}\n".format(id, name)
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"add", "on":"users", "id":id, "name":name}, "opnum": seq_num};
     msg = json.dumps(msg)
@@ -62,6 +63,7 @@ def create_route():
 def get_id_route(id):
     id = int(id) # In URI, id is a string and must be made int
     print "Retrieving id {0}\n".format(id)
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"retrieve", "on":"users", "id":id, "name":None}, "opnum": seq_num}
     msg = json.dumps(msg)
@@ -78,6 +80,7 @@ def get_id_route(id):
 @get('/names/<name>')
 def get_name_route(name):
     print "Retrieving name {0}\n".format(name)
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"retrieve", "on":"users", "id":None, "name":name}, "opnum":seq_num}
     msg = json.dumps(msg)
@@ -95,6 +98,7 @@ def get_name_route(name):
 def delete_id_route(id):
     id = int(id)
     print "Deleting id {0}\n".format(id)
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"delete", "on":"users", "id":id, "name":None}, "opnum": seq_num}
     msg = json.dumps(msg)
@@ -110,6 +114,7 @@ def delete_id_route(id):
 
 @delete('/names/<name>')
 def delete_name_route(name):
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"delete", "on":"users", "id":None, "name":name}, "opnum": seq_num}
     msg = json.dumps(msg)
@@ -127,6 +132,7 @@ def delete_name_route(name):
 def add_activity_route(id, activity):
     id = int(id)
     print "adding activity for id {0}, activity {1}\n".format(id, activity)
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"add", "on":"activity", "id":id, "name":activity}, "opnum": seq_num}
     msg = json.dumps(msg)
@@ -144,6 +150,7 @@ def add_activity_route(id, activity):
 def delete_activity_route(id, activity):
     id = int(id)
     print "deleting activity for id {0}, activity {1}\n".format(id, activity)
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"delete", "on":"activity", "id":id, "name":activity}, "opnum": seq_num}
     msg = json.dumps(msg)
@@ -160,6 +167,7 @@ def delete_activity_route(id, activity):
 @get('/users')
 def get_list_route():
     print "Retrieving users {0}\n".format(type, id)
+    global seq_num
     seq_num+=1;
     msg = {"jsonBody":{"action":"get_list", "on":"users", "id":None, "name": None}, "opnum": seq_num}
     msg = json.dumps(msg)
