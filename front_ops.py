@@ -19,6 +19,7 @@ AWS_REGION = "us-west-2"
 
 Q_IN_NAME_BASE = 'a3_in'
 Q_OUT_NAME = 'a3_out'
+# Operation counter
 seq_num=0
 # Respond to health check
 @get('/')
@@ -48,9 +49,11 @@ def create_route():
 
     print "creating id {0}, name {1}\n".format(id, name)
     global seq_num
+    #increase operation counter when route created
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"add", "on":"users", "id":id, "name":name};
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value;
     msg = json.dumps(msg);
     msg_a = boto.sqs.message.Message()
@@ -65,10 +68,12 @@ def create_route():
 def get_id_route(id):
     id = int(id) # In URI, id is a string and must be made int
     print "Retrieving id {0}\n".format(id)
+    # increase operation counter while retrieving user id
     global seq_num;
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"retrieve", "on":"users", "id":id, "name":None}
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
@@ -84,10 +89,12 @@ def get_id_route(id):
 @get('/names/<name>')
 def get_name_route(name):
     print "Retrieving name {0}\n".format(name)
+    # increase operation counter while retrieving by user name
     global seq_num
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"retrieve", "on":"users", "id":None, "name":name}
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
@@ -104,10 +111,12 @@ def get_name_route(name):
 def delete_id_route(id):
     id = int(id)
     print "Deleting id {0}\n".format(id)
+    # increase operation counter while deleting by user id
     global seq_num
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"delete", "on":"users", "id":id, "name":None};
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
@@ -122,10 +131,12 @@ def delete_id_route(id):
 
 @delete('/names/<name>')
 def delete_name_route(name):
+    # increase operation counter while deleting by user name
     global seq_num
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"delete", "on":"users", "id":None, "name":name}
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
@@ -142,10 +153,12 @@ def delete_name_route(name):
 def add_activity_route(id, activity):
     id = int(id)
     print "adding activity for id {0}, activity {1}\n".format(id, activity)
+    # increase operation counter while adding activity
     global seq_num
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"add", "on":"activity", "id":id, "name":activity}
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
@@ -162,10 +175,12 @@ def add_activity_route(id, activity):
 def delete_activity_route(id, activity):
     id = int(id)
     print "deleting activity for id {0}, activity {1}\n".format(id, activity)
+    # increase operation counter while deleting activity
     global seq_num
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"delete", "on":"activity", "id":id, "name":activity}
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
@@ -182,9 +197,11 @@ def delete_activity_route(id, activity):
 def get_list_route():
     print "Retrieving users {0}\n".format(type, id)
     global seq_num
+    # increase operation counter while retrieving all users
     seq_num+=1;
     msg = {};
     msg["jsonBody"] = {"action":"get_list", "on":"users", "id":None, "name": None}
+    # place seq_num value as key 'opnum' in the message
     msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
@@ -196,6 +213,7 @@ def get_list_route():
     return make_response(result);
 
 def setup_op_counter():
+    # zookeeper operation counter
     global seq_num
     zkcl = send_msg_ob.get_zkcl()
     if not zkcl.exists('/SeqNum'):
