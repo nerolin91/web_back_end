@@ -19,7 +19,7 @@ AWS_REGION = "us-west-2"
 
 Q_IN_NAME_BASE = 'a3_in'
 Q_OUT_NAME = 'a3_out'
-
+seq_num=0
 # Respond to health check
 @get('/')
 def health_check():
@@ -254,6 +254,7 @@ secondResponseId=[]
 pairId={}
 partnerList={}
 
+
 def is_first_response(id):
     # EXTEND:
     # Return True if this message is the first response to a request
@@ -306,13 +307,13 @@ def set_dup_DS(action, sent_a, sent_b):
                Opaque data type: Simply save it, do not interpret it.
        sent_a: The boto.sqs.message.Message() that was sent to a3_in_a.
        sent_b: The boto.sqs.message.Message() that was sent to a3_in_b.
-       
+
                The .id field of each of these is the message ID assigned
                by SQS to each message.  These ids will be in the
                msg_id attribute of the JSON object returned by the
                response from the backend code that you write.
     '''
- 
+
     msg_a = json.loads(sent_a.get_body())
     msg_b = json.loads(sent_b.get_body())
     msg_a_id = sent_a.id
