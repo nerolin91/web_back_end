@@ -243,8 +243,7 @@ if __name__ == "__main__":
         
         wait_start = time.time()
     elif time.time() - wait_start > MAX_TIME_S:
-        print "\nNo messages on input queue for {0} seconds. Server no longer reading response queue {1}.".format(MAX_TIME_S, q_out.name)
+        print "\nNo messages on input queue for {0} seconds. Server no longer reading response queue {1}.".format(MAX_TIME_S, Q_OUT_NAME)
         break
     else:
         pass  
-
