@@ -71,10 +71,13 @@ def handle_args():
 
     if not (DEL_DUP_MIN <= args.deldup <= 100):
         print "deldup must be >={0} and <= 100".format(DEL_DUP_MIN)
+<<<<<<< HEAD
         sys.exit(1)
 
     if args.sqs_wait < 0 or SQS_MAX_TIMEOUT < args.sqs_wait:
         print "sqs_wait must be >= 0 and <= {0}".format(SQS_MAX_TIMEOUT)
+=======
+>>>>>>> a0df62db29c5dbf81c09a4c2ca5f9d47146e4dbc
         sys.exit(1)
 
     return args
