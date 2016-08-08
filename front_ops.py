@@ -49,9 +49,10 @@ def create_route():
     print "creating id {0}, name {1}\n".format(id, name)
     global seq_num
     seq_num+=1;
+    msg = {};
     msg["jsonBody"] = {"action":"add", "on":"users", "id":id, "name":name};
-    msg["opnum"] = seq_num;
-    msg = json.dumps(msg)
+    msg["opnum"] = seq_num.value;
+    msg = json.dumps(msg);
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
     msg_b = boto.sqs.message.Message()
@@ -64,10 +65,11 @@ def create_route():
 def get_id_route(id):
     id = int(id) # In URI, id is a string and must be made int
     print "Retrieving id {0}\n".format(id)
-    inner_num = seq_num
-    inner_num+=1;
+    global seq_num;
+    seq_num+=1;
+    msg = {};
     msg["jsonBody"] = {"action":"retrieve", "on":"users", "id":id, "name":None}
-    msg["opnum"] = seq_num;
+    msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
@@ -84,8 +86,9 @@ def get_name_route(name):
     print "Retrieving name {0}\n".format(name)
     global seq_num
     seq_num+=1;
+    msg = {};
     msg["jsonBody"] = {"action":"retrieve", "on":"users", "id":None, "name":name}
-    MSG["opnum"] = seq_num
+    msg["opnum"] = seq_num.value
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
@@ -103,8 +106,9 @@ def delete_id_route(id):
     print "Deleting id {0}\n".format(id)
     global seq_num
     seq_num+=1;
+    msg = {};
     msg["jsonBody"] = {"action":"delete", "on":"users", "id":id, "name":None};
-    msg["opnum"] = seq_num;
+    msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
@@ -120,8 +124,9 @@ def delete_id_route(id):
 def delete_name_route(name):
     global seq_num
     seq_num+=1;
+    msg = {};
     msg["jsonBody"] = {"action":"delete", "on":"users", "id":None, "name":name}
-    msg["opnum"] = seq_num;
+    msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
@@ -139,8 +144,9 @@ def add_activity_route(id, activity):
     print "adding activity for id {0}, activity {1}\n".format(id, activity)
     global seq_num
     seq_num+=1;
+    msg = {};
     msg["jsonBody"] = {"action":"add", "on":"activity", "id":id, "name":activity}
-    msg["opnum"] = seq_num
+    msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
@@ -158,9 +164,9 @@ def delete_activity_route(id, activity):
     print "deleting activity for id {0}, activity {1}\n".format(id, activity)
     global seq_num
     seq_num+=1;
-    msg_req = {};
+    msg = {};
     msg["jsonBody"] = {"action":"delete", "on":"activity", "id":id, "name":activity}
-    msg["opnum"] = seq_num;
+    msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
@@ -177,8 +183,9 @@ def get_list_route():
     print "Retrieving users {0}\n".format(type, id)
     global seq_num
     seq_num+=1;
+    msg = {};
     msg["jsonBody"] = {"action":"get_list", "on":"users", "id":None, "name": None}
-    msg["opnum"] = seq_num;
+    msg["opnum"] = seq_num.value;
     msg = json.dumps(msg)
     msg_a = boto.sqs.message.Message()
     msg_a.set_body(msg)
